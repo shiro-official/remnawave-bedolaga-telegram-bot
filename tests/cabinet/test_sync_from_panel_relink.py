@@ -84,6 +84,7 @@ def _service(api):
 
 async def _call(user, sub_id, api):
     db = AsyncMock()
+    db.execute.return_value = SimpleNamespace(first=lambda: None, scalar_one_or_none=lambda: None)
     with (
         patch.object(type(au.settings), 'is_multi_tariff_enabled', MagicMock(return_value=True)),
         patch.object(au, 'get_user_by_id', AsyncMock(return_value=user)),

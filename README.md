@@ -167,6 +167,7 @@ Bedolaga поддерживает полный кросс-канальный ж�
 | 💳 | **MulenPay** | Карты | RUB |
 | 💳 | **RioPay** | Карты | RUB |
 | 💳 | **SeverPay** | СБП, карты | RUB |
+| 💳 | **PayPear** | СБП | RUB |
 | 🤝 | **[RollyPay](https://rollypay.io/?utm_source=bedolaga&utm_medium=community&utm_campaign=integration)** 🔸 | СБП, карты, крипто | RUB → USDT |
 | 🤝 | **[AuraPay](https://aurapay.tech/)** 🔸 | Карты, СБП | RUB |
 | 🤝 | **[Overpay](https://overpay.pro/)** 🔸 | Карты, СБП | RUB |

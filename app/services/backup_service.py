@@ -105,6 +105,7 @@ from app.database.models import (
     SeverPayPayment,
     Squad,
     Subscription,
+    SubscriptionBsAccount,
     SubscriptionConversion,
     SubscriptionEvent,
     SubscriptionServer,
@@ -227,6 +228,7 @@ class BackupService:
             WelcomeText,
             UserMessage,
             Subscription,
+            SubscriptionBsAccount,
             SubscriptionServer,
             SubscriptionConversion,
             Transaction,
@@ -1684,6 +1686,7 @@ class BackupService:
             'subscription_temporary_access',
             # --- User engagement ---
             'subscription_events',
+            'subscription_bs_accounts',
             'traffic_purchases',
             'user_promo_groups',
             'withdrawal_requests',

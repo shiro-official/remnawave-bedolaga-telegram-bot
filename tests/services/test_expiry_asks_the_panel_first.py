@@ -26,6 +26,14 @@ from app.services.notification_settings_service import NotificationSettingsServi
 NOW = datetime.now(UTC)
 
 
+def _db():
+    return SimpleNamespace(
+        execute=AsyncMock(return_value=SimpleNamespace(first=lambda: None, scalar_one_or_none=lambda: None)),
+        commit=AsyncMock(),
+        refresh=AsyncMock(),
+    )
+
+
 class _FakeApi:
     def __init__(self, panel_user) -> None:
         self.panel_user = panel_user
@@ -111,7 +119,7 @@ async def test_alive_in_the_panel_is_not_expired_and_takes_the_panel_date(monkey
     monkeypatch.setattr(monitoring_module, 'get_expired_subscriptions', AsyncMock(return_value=[subscription]))
     monkeypatch.setattr(monitoring_module, 'get_user_by_id', AsyncMock(return_value=user))
     monkeypatch.setattr('app.database.crud.subscription.expire_subscription_if_still_due', expire)
-    db = SimpleNamespace(execute=AsyncMock(), commit=AsyncMock(), refresh=AsyncMock())
+    db = _db()
 
     await service._check_expired_subscriptions(db)
 
@@ -135,7 +143,7 @@ async def test_expired_in_the_panel_is_expired_in_the_bot(monkeypatch) -> None:
     monkeypatch.setattr(monitoring_module, 'get_expired_subscriptions', AsyncMock(return_value=[subscription]))
     monkeypatch.setattr(monitoring_module, 'get_user_by_id', AsyncMock(return_value=user))
     monkeypatch.setattr('app.database.crud.subscription.expire_subscription_if_still_due', expire)
-    db = SimpleNamespace(execute=AsyncMock(), commit=AsyncMock(), refresh=AsyncMock())
+    db = _db()
 
     await service._check_expired_subscriptions(db)
 
@@ -157,7 +165,7 @@ async def test_silent_panel_falls_back_to_the_bot_date(monkeypatch) -> None:
     monkeypatch.setattr(monitoring_module, 'get_expired_subscriptions', AsyncMock(return_value=[subscription]))
     monkeypatch.setattr(monitoring_module, 'get_user_by_id', AsyncMock(return_value=user))
     monkeypatch.setattr('app.database.crud.subscription.expire_subscription_if_still_due', expire)
-    db = SimpleNamespace(execute=AsyncMock(), commit=AsyncMock(), refresh=AsyncMock())
+    db = _db()
 
     await service._check_expired_subscriptions(db)
 
@@ -194,7 +202,7 @@ async def test_open_grace_overlay_is_not_taken_for_a_panel_renewal(monkeypatch) 
     monkeypatch.setattr(monitoring_module, 'get_expired_subscriptions', AsyncMock(return_value=[subscription]))
     monkeypatch.setattr(monitoring_module, 'get_user_by_id', AsyncMock(return_value=user))
     monkeypatch.setattr('app.database.crud.subscription.expire_subscription_if_still_due', expire)
-    db = SimpleNamespace(execute=AsyncMock(), commit=AsyncMock(), refresh=AsyncMock())
+    db = _db()
 
     await service._check_expired_subscriptions(db)
 
@@ -219,7 +227,7 @@ async def test_grace_tail_left_in_the_panel_is_not_a_renewal_either(monkeypatch)
     monkeypatch.setattr(monitoring_module, 'get_expired_subscriptions', AsyncMock(return_value=[subscription]))
     monkeypatch.setattr(monitoring_module, 'get_user_by_id', AsyncMock(return_value=user))
     monkeypatch.setattr('app.database.crud.subscription.expire_subscription_if_still_due', expire)
-    db = SimpleNamespace(execute=AsyncMock(), commit=AsyncMock(), refresh=AsyncMock())
+    db = _db()
 
     await service._check_expired_subscriptions(db)
 
