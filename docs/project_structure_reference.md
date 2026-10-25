@@ -919,7 +919,7 @@
   Классы: `Pal24APIError`, `Pal24Response` (2 методов), `Pal24Client` (14 методов)
   Функции: нет
 - `app/external/remnawave_api.py` — Python-модуль
-  Классы: `UserStatus`, `TrafficLimitStrategy`, `UserTraffic`, `RemnaWaveUser` (4 методов), `RemnaWaveInbound`, `RemnaWaveInternalSquad`, `RemnaWaveAccessibleNode`, `RemnaWaveHost`, `RemnaWaveNode` (2 методов), `SubscriptionInfo`, `SubscriptionPageConfig`, `RemnaWaveExternalSquad`, `RemnaWaveTransientError`, `RemnaWaveAPI` (108 методов)
+  Классы: `UserStatus`, `TrafficLimitStrategy`, `UserTraffic`, `RemnaWaveUser` (4 методов), `RemnaWaveInbound`, `RemnaWaveInternalSquad`, `RemnaWaveAccessibleNode`, `RemnaWaveHost`, `RemnaWaveNode` (2 методов), `SubscriptionInfo`, `SubscriptionPageConfig`, `RemnaWaveExternalSquad`, `RemnaWaveTransientError`, `RemnaWaveAPI` (109 методов)
   Функции: `is_valid_internal_squad_name` — Имя сквада, которое примет панель., `is_expire_in_past_error` — Панель отвергла ``expireAt`` как прошедшую дату., `is_user_not_found_error` — Панель сообщила, что такого пользователя НЕТ (удалён / протух идентификатор)., `is_stale_external_squad_error` — Панель отвергла запись из-за ``externalSquadUuid`` (или не смогла её отличить)., `format_bytes`, `parse_bytes`, `test_api_connection`
 - `app/external/remnawave_errors.py` — Python-модуль
   Классы: `RemnaWaveAPIError` (1 методов), `RemnaWaveInvalidUserIdError`
@@ -1493,6 +1493,12 @@
 - `app/services/broadcast_service.py` — Python-модуль
   Классы: `BroadcastMediaConfig`, `BroadcastConfig`, `EmailBroadcastConfig`, `BroadcastService` (15 методов), `EmailBroadcastService` (15 методов)
   Функции: `parse_email_scoped_target` — Email-таргет с идентификатором: ``promo_group_{id}`` или ``user_{id}``., `cleanup_blocked_broadcast_users` — Фоновая очистка пользователей, заблокировавших бота (обнаруженных при рассылке).
+- `app/services/bs_subscription_composer.py` — Python-модуль
+  Классы: `UnsupportedSubscription`, `SubscriptionDocument` (2 методов), `CompositionResult`
+  Функции: `forwarded_device_headers` — Never accept client authorization, host, proxy, cookie or format override headers., `contains_account_credentials` — Reject panel error remarks that happen to be valid configurations., `compose_subscriptions` — Keep the primary admission result, profile headers and whole configurations.
+- `app/services/bs_subscription_delivery.py` — Python-модуль
+  Классы: `SubscriptionUnavailable`
+  Функции: `deliver_subscription` — Fetch primary first and preserve ordinary access on a secondary failure.
 - `app/services/bs_subscription_service.py` — Python-модуль
   Классы: нет
   Функции: `prepare_bs_account` — Persist an intent, prepare a disabled panel identity, then persist its id.
@@ -3776,6 +3782,9 @@
 - `tests/database/test_bs_account_preparation_postgres.py` — Python-модуль
   Классы: `FakePanel` (6 методов)
   Функции: `single_period_tariffs`, `test_preparation_is_repeatable_and_never_changes_primary`, `test_lost_create_response_recovers_persisted_intent_without_duplicate`, `test_inbound_overlap_blocks_writes_and_intent_creation`, `test_trial_and_disabled_tariff_do_not_get_secondary`, `test_conflicting_username_is_never_adopted_or_modified`, `test_primary_id_collision_blocks_write_even_with_matching_marker`, `test_bs_account_is_in_backup_after_parent_subscription`, `test_secondary_cannot_be_written_or_adopted_as_primary`, `test_secondary_reservation_beats_corrupt_stored_primary_pointer`, `test_preparation_refuses_enabled_candidate_without_disabling_it`, `test_preparation_keeps_personal_bs_limit`, `test_concurrent_preparation_keeps_one_persisted_identity`, `test_preflight_error_releases_primary_lock`, `test_unconfirmed_panel_quota_leaves_a_retryable_intent`
+- `tests/database/test_bs_subscription_delivery_postgres.py` — Python-модуль
+  Классы: `FakePanel` (3 методов)
+  Функции: `seed`, `test_active_split_delivers_both_without_changing_database`, `test_primary_hwid_refusal_never_contacts_bs`, `test_inactive_panel_identity_cannot_add_bs`, `test_trial_shared_and_unprepared_subscriptions_fetch_primary_only`, `test_local_denial_makes_no_panel_request`, `test_wrong_primary_panel_identity_never_receives_hwid`, `test_wrong_secondary_panel_identity_never_receives_hwid`, `test_secondary_reserved_as_another_primary_cannot_be_delivered`, `test_secondary_failure_preserves_ordinary_access`, `test_cancellation_is_propagated`, `test_http_200_error_remark_without_denial_header_cannot_add_bs`, `test_primary_reserved_as_bs_fails_before_panel_access`, `test_dirty_caller_transaction_cannot_be_autoflushed_by_delivery`, `test_missing_secondary_short_uuid_keeps_ordinary_access`
 - `tests/database/test_bs_traffic_migration_postgres.py` — Python-модуль
   Классы: нет
   Функции: `test_upgrade_preserves_old_paid_trial_and_expired_data`
@@ -3899,6 +3908,9 @@
 - `tests/external/test_apple_iap.py` — Python-модуль
   Классы: `TestAppleDependency` (1 методов), `TestSettings` (8 методов), `TestTransactionValidation` (3 методов), `TestAdapter` (2 методов), `TestSchemas` (4 методов), `TestTimestampParsing` (2 методов), `TestCabinetAppleIAPRoutes` (8 методов), `TestFulfillmentService` (6 методов), `TestAdapterFallback` (1 методов), `TestNotificationService` (7 методов), `TestAppleIAPRouting` (3 методов)
   Функции: `anyio_backend`
+- `tests/external/test_bs_public_subscription_transport.py` — Python-модуль
+  Классы: нет
+  Функции: `panel_server`, `test_public_fetch_preserves_hwid_refusal_body_headers_and_http_status`, `test_redirect_is_not_followed_with_panel_credentials`, `test_chunked_response_without_content_length_is_still_bounded`, `test_invalid_utf8_is_not_replaced_with_damaged_credentials`, `test_invalid_short_uuid_never_makes_a_request`
 - `tests/external/test_bschek_api.py` — Python-модуль
   Классы: нет
   Функции: `test_error_envelope_is_mapped`, `test_no_dpi_on_carries_skipped_units_in_details`, `test_rate_limited_exposes_retry_after`, `test_validation_422_keeps_fields`, `test_cloudflare_524_without_body_is_gateway_error`, `test_html_502_is_gateway_error`, `test_success_body_is_returned_as_is`, `test_no_dpi_on_race_with_200_is_not_an_error`, `test_every_recorded_error_fixture_parses_to_a_code` — Сторож: новый записанный ответ с конвертом ошибки обязан разбираться., `test_operators_params_join_lists_and_keep_cyrillic`, `test_get_openapi_reads_spec_from_api_root`, `test_account_hides_webhook_secret`, `test_methods_hit_expected_paths`, `test_api_key_never_appears_in_repr`
@@ -4452,6 +4464,9 @@
 - `tests/services/test_broadcast_per_recipient_keyboard.py` — Python-модуль
   Классы: нет
   Функции: `test_keyboard_factory_builds_personal_keyboard_per_recipient` — Каждому получателю уходит своя клавиатура, а не одна общая., `test_blocked_recipients_counted_separately` — Заблокировавшие бота идут в blocked, а не в общую кучу ошибок., `test_without_factory_shared_keyboard_is_used` — Обычные рассылки не затронуты: без фабрики уходит общая клавиатура.
+- `tests/services/test_bs_subscription_composer.py` — Python-модуль
+  Классы: нет
+  Функции: `document`, `profile`, `clash`, `test_uri_and_base64_preserve_keys_and_primary_encoding`, `test_duplicate_identical_links_are_not_repeated`, `test_xray_full_profiles_keep_private_keys_and_internal_tags`, `test_clash_groups_and_colliding_names_are_rewritten_without_touching_keys`, `test_clash_generated_suffix_cannot_collide_with_existing_secondary_name`, `test_primary_http_200_hwid_refusal_is_preserved_even_with_valid_config`, `test_non_200_from_either_account_cannot_append_bs`, `test_secondary_hwid_denial_does_not_remove_ordinary_access_or_leak_its_headers`, `test_unsupported_or_empty_documents_preserve_primary`, `test_different_valid_formats_cannot_be_appended`, `test_oversized_and_oversized_combined_documents_preserve_primary`, `test_incompatible_clash_templates_keep_ordinary_document`, `test_headers_preserve_primary_quota_but_strip_cache_identifiers_and_private_data`, `test_only_device_metadata_is_forwarded_to_panel`, `test_account_credential_proof_supports_real_panel_formats`, `test_valid_looking_error_remarks_do_not_prove_account_access`, `test_accounts_without_credentials_cannot_prove_a_real_config`, `test_dynamic_clash_selectors_are_preserved_without_merging`
 - `tests/services/test_bs_traffic_policy.py` — Python-модуль
   Классы: нет
   Функции: `test_trial_and_disabled_tariffs_keep_shared_account`, `test_invalid_split_configuration_is_rejected`, `test_multi_tariff_is_not_silently_enabled`, `test_squads_are_partitioned_by_identity_not_name`, `test_trial_squad_overlap_is_rejected_before_writing`, `test_missing_or_empty_squad_does_not_pass_preflight`, `test_prepared_bs_is_disabled_and_shares_expiry_without_primary_credentials`, `test_personal_limit_override_is_not_replaced_by_tariff_limit`, `test_secondary_username_cannot_equal_primary`
