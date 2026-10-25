@@ -1454,6 +1454,36 @@ class RemnaWaveAPI:
                 raise RemnaWaveAPIError(f'Failed to get subscription: {response.status}')
             return await response.text(), {key.lower(): value for key, value in response.headers.items()}
 
+    async def get_public_subscription_response(
+        self, short_uuid: str, *, headers: dict[str, str] | None = None
+    ) -> tuple[int, str, dict[str, str]]:
+        """Bounded public document for composition, including HTTP admission status.
+
+        Only a locally verified short UUID may reach this method. Redirects are
+        never followed: they could disclose the API session's credentials.
+        This is separate from the historical admin reachability fetcher.
+        """
+        if self.session is None:
+            raise RemnaWaveAPIError('Session not initialized. Use async context manager.')
+        if not re.fullmatch(r'[A-Za-z0-9_-]{6,64}', short_uuid):
+            raise RemnaWaveAPIError('Invalid public subscription identifier')
+        limit = 4 * 1024 * 1024
+        async with self.session.get(
+            f'{self.base_url}/api/sub/{short_uuid}', headers=headers, allow_redirects=False
+        ) as response:
+            if 300 <= response.status < 400:
+                raise RemnaWaveAPIError('Public subscription redirect refused')
+            body = bytearray()
+            async for chunk in response.content.iter_chunked(65536):
+                body.extend(chunk)
+                if len(body) > limit:
+                    raise RemnaWaveAPIError('Public subscription exceeds the size limit')
+            try:
+                text = body.decode('utf-8')
+            except UnicodeDecodeError as error:
+                raise RemnaWaveAPIError('Public subscription is not UTF-8') from error
+            return response.status, text, {key.lower(): value for key, value in response.headers.items()}
+
     async def get_system_stats(self) -> dict[str, Any]:
         """``GET /api/system/stats`` — без query-параметров (``tz`` есть только у ``/stats/bandwidth``)."""
         response = await self._make_request('GET', '/api/system/stats')
