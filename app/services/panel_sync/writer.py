@@ -38,6 +38,30 @@ from app.services.panel_sync.payload import PanelPayload, build_panel_payload
 logger = structlog.get_logger(__name__)
 
 
+async def sync_bs_device_limit(api, *, account, primary, secondary, limit: int) -> None:
+    """Mirror an explicit primary limit; never touch quota, keys, status or squads."""
+    from app.services.bs_traffic_policy import BsAccountIdentityError, bs_ownership_marker
+
+    def owned(candidate) -> bool:
+        return (
+            candidate is not None
+            and candidate.id == account.remnawave_id
+            and candidate.id != primary.id
+            and candidate.short_uuid == account.remnawave_short_uuid
+            and candidate.username == account.panel_username
+            and candidate.description == bs_ownership_marker(account)
+        )
+
+    if type(limit) is not int or limit < 0 or limit != primary.hwid_device_limit or not owned(secondary):
+        raise BsAccountIdentityError('Cannot mirror an unconfirmed primary device limit')
+    current = await api.get_user_by_id(secondary.id)
+    if not owned(current):
+        raise BsAccountIdentityError('Secondary identity changed before device limit update')
+    result = await api.update_user(user_id=current.id, hwid_device_limit=limit)
+    if not owned(result) or type(result.hwid_device_limit) is not int or result.hwid_device_limit != limit:
+        raise BsAccountIdentityError('Secondary device limit update was not confirmed')
+
+
 @dataclass(frozen=True)
 class PanelWriteResult:
     """Чем закончилась запись."""
@@ -127,8 +151,11 @@ async def push_subscription(
 
     panel_user_id = identity.user_id
     if panel_user_id is not None:
-        if reset_devices and not await api.reset_user_devices(panel_user_id):
-            logger.error('⚠️ Не удалось сбросить HWID', panel_user_id=panel_user_id)
+        if reset_devices:
+            from app.services.bs_device_policy import reset_subscription_devices
+
+            if not await reset_subscription_devices(api, db, subscription, panel_user_id):
+                logger.error('⚠️ Не удалось сбросить HWID', panel_user_id=panel_user_id)
         update_kwargs = payload.update_kwargs(
             user_id=panel_user_id,
             panel_current=identity.expire_at,

@@ -35,6 +35,7 @@ from app.database.crud.user_device_alias import (
     set_alias,
 )
 from app.database.models import Subscription, TransactionType, User
+from app.services.bs_device_policy import is_split_subscription, remove_subscription_device, reset_subscription_devices
 from app.services.panel_sync import should_create_panel_account
 from app.services.subscription_service import SubscriptionService
 from app.services.user_cart_service import user_cart_service
@@ -1081,7 +1082,7 @@ async def delete_device(
             # Тело запроса в 3.0.0 — {'userId': int, 'hwid': str}; собираем его не
             # руками, а клиентом: он валидирует идентификатор на границе и
             # проверяет, что hwid действительно пропал из ответа панели.
-            removed = await api.remove_device(_panel_user_id, hwid)
+            removed = await remove_subscription_device(api, db, subscription, _panel_user_id, hwid)
 
         if not removed:
             raise HTTPException(
@@ -1135,7 +1136,7 @@ async def delete_all_devices(
             # Get all devices first
             response = await api.get_user_devices_all(_panel_user_id)
 
-            if not response:
+            if not response and not is_split_subscription(subscription):
                 return {
                     'success': True,
                     'message': 'No devices to delete',
@@ -1143,7 +1144,7 @@ async def delete_all_devices(
                 }
 
             devices_list = response.get('devices', [])
-            if not devices_list:
+            if not devices_list and not is_split_subscription(subscription):
                 return {
                     'success': True,
                     'message': 'No devices to delete',
@@ -1155,7 +1156,7 @@ async def delete_all_devices(
             # запросу на устройство», и он ко всему прочему возвращал
             # `success: true` даже когда не удалилось НИ ОДНО устройство.
             total = len(devices_list)
-            if not await api.reset_user_devices(_panel_user_id):
+            if not await reset_subscription_devices(api, db, subscription, _panel_user_id):
                 raise HTTPException(
                     status_code=status.HTTP_502_BAD_GATEWAY,
                     detail='Failed to delete devices',
@@ -1372,7 +1373,9 @@ async def reduce_devices(
                             device_hwid = device.get('hwid')
                             if device_hwid:
                                 try:
-                                    if await api.remove_device(_panel_user_id, device_hwid):
+                                    if await remove_subscription_device(
+                                        api, db, subscription, _panel_user_id, device_hwid
+                                    ):
                                         devices_removed_count += 1
                                         logger.info('Removed device for user', device_hwid=device_hwid, user_id=user.id)
                                 except Exception as del_error:

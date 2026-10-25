@@ -1,4 +1,4 @@
-"""Read-only delivery engine; no public route or cutover is enabled here.
+"""Internal delivery engine; no public route or cutover is enabled here.
 
 The future public route must resolve/authenticate its token before calling this
 service. It must not expose a subscription database id as a bearer credential.
@@ -10,12 +10,20 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import aiohttp
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.config import settings
-from app.database.models import Subscription, SubscriptionBsAccount, User
+from app.database.models import Subscription, SubscriptionBsAccount
 from app.external.remnawave_api import RemnaWaveAPIError, UserStatus
+from app.services.bs_account_identity import verify_bs_identity
+from app.services.bs_device_policy import (
+    BsDevicePolicyError,
+    bs_device_lock,
+    confirm_secondary_devices,
+    is_split_subscription,
+    prepare_secondary_devices,
+)
 from app.services.bs_subscription_composer import (
     CompositionResult,
     SubscriptionDocument,
@@ -23,7 +31,7 @@ from app.services.bs_subscription_composer import (
     contains_account_credentials,
     forwarded_device_headers,
 )
-from app.services.bs_traffic_policy import bs_ownership_marker
+from app.services.bs_traffic_policy import BsAccountIdentityError
 from app.services.panel_sync.identity import find_foreign_panel_owner
 
 
@@ -47,14 +55,26 @@ def _panel_active(user) -> bool:
 async def deliver_subscription(db, api, subscription_id: int, *, request_headers: dict[str, str]) -> CompositionResult:
     """Fetch primary first and preserve ordinary access on a secondary failure.
 
-    This service never bypasses either account's HWID gate, modifies panel
-    accounts, changes device limits or caches a subscription response.
+    Split delivery synchronizes stale secondary devices and the explicit primary
+    device limit under the same lock used for device deletion/reset. It never
+    bypasses HWID admission, alters primary limits, or caches configurations.
     """
     if db.new or db.dirty or db.deleted:
         raise SubscriptionUnavailable('Delivery requires a clean unit of work')
     subscription = await db.scalar(
         select(Subscription).where(Subscription.id == subscription_id).options(selectinload(Subscription.user))
     )
+    if subscription is not None and is_split_subscription(subscription):
+        async with bs_device_lock(db, subscription_id) as locked_db:
+            # Use a fresh snapshot after acquiring the shared device lock.
+            subscription = await locked_db.scalar(
+                select(Subscription).where(Subscription.id == subscription_id).options(selectinload(Subscription.user))
+            )
+            return await _deliver_subscription(locked_db, api, subscription, request_headers)
+    return await _deliver_subscription(db, api, subscription, request_headers)
+
+
+async def _deliver_subscription(db, api, subscription, request_headers) -> CompositionResult:
     if (
         subscription is None
         or subscription.user is None
@@ -112,44 +132,30 @@ async def deliver_subscription(db, api, subscription_id: int, *, request_headers
         or not account.remnawave_short_uuid
     ):
         return ordinary('secondary_unprepared')
-    if account.remnawave_id == primary_user.id or account.remnawave_short_uuid == primary_user.short_uuid:
-        return ordinary('secondary_identity_mismatch')
-    if await db.scalar(select(User.id).where(User.remnawave_id == account.remnawave_id).limit(1)) is not None:
-        return ordinary('secondary_identity_mismatch')
-    if (
-        await db.scalar(
-            select(Subscription.id)
-            .where(
-                or_(
-                    Subscription.remnawave_id == account.remnawave_id,
-                    Subscription.remnawave_short_uuid == account.remnawave_short_uuid,
-                )
-            )
-            .limit(1)
-        )
-        is not None
-    ):
-        return ordinary('secondary_identity_mismatch')
     try:
-        secondary_user = await api.get_user_by_id(account.remnawave_id)
-        if (
-            secondary_user is None
-            or secondary_user.id != account.remnawave_id
-            or secondary_user.short_uuid != account.remnawave_short_uuid
-            or secondary_user.username != account.panel_username
-            or secondary_user.description != bs_ownership_marker(account)
-        ):
-            return ordinary('secondary_identity_mismatch')
+        secondary_user = await verify_bs_identity(db, api, account, primary_user)
         if not _panel_active(secondary_user):
             return ordinary('secondary_inactive')
+        limit = await prepare_secondary_devices(api, primary_user, secondary_user, account, primary, headers)
         status, body, response_headers = await api.get_public_subscription_response(
             secondary_user.short_uuid, headers=headers
         )
+    except BsAccountIdentityError:
+        return ordinary('secondary_identity_mismatch')
+    except BsDevicePolicyError:
+        return ordinary('device_policy_unconfirmed')
     except (RemnaWaveAPIError, aiohttp.ClientError, TimeoutError):
         return ordinary('secondary_unavailable')
     secondary = SubscriptionDocument(body, response_headers, status)
     if not contains_account_credentials(secondary, secondary_user):
         return ordinary('secondary_not_configuration')
+    # Preserve the original HTTP/HWID refusal before checking device metadata.
+    if secondary.status != 200 or secondary.hwid_denied:
+        return ordinary('secondary_denied')
+    try:
+        await confirm_secondary_devices(api, primary_user, secondary_user, secondary, headers, limit)
+    except (BsDevicePolicyError, RemnaWaveAPIError, aiohttp.ClientError, TimeoutError):
+        return ordinary('device_policy_unconfirmed')
     # asyncio cancellation intentionally propagates; do not turn request shutdown
     # into a successful response with partially fetched configuration material.
     return compose_subscriptions(primary, secondary)

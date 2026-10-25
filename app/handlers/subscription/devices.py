@@ -32,6 +32,7 @@ from app.keyboards.inline import (
     get_specific_app_keyboard,
 )
 from app.localization.texts import get_texts
+from app.services.bs_device_policy import is_split_subscription, remove_subscription_device, reset_subscription_devices
 from app.services.pricing_engine import PricingEngine
 from app.services.remnawave_service import RemnaWaveService
 from app.services.subscription_service import SubscriptionService
@@ -751,7 +752,9 @@ async def execute_change_devices(
                                 device_hwid = device.get('hwid')
                                 if device_hwid:
                                     # remove_device сам логирует и возвращает False вместо исключения
-                                    if await api.remove_device(panel_user_id, device_hwid):
+                                    if await remove_subscription_device(
+                                        api, db, subscription, panel_user_id, device_hwid
+                                    ):
                                         devices_reset_count += 1
                                         logger.info('✅ Удалено устройство', device_hwid=device_hwid)
                                     else:
@@ -1276,7 +1279,7 @@ async def handle_single_device_reset(
 
                     if device_hwid:
                         # remove_device не бросает исключений — сообщаем об отказе явно
-                        if not await api.remove_device(panel_user_id, device_hwid):
+                        if not await remove_subscription_device(api, db, subscription, panel_user_id, device_hwid):
                             await callback.answer(
                                 texts.t('DEVICE_RESET_ERROR', '❌ Ошибка сброса устройства'),
                                 show_alert=True,
@@ -1382,7 +1385,7 @@ async def handle_all_devices_reset_from_management(
 
             devices_list = devices_info.get('devices', [])
 
-            if not devices_list:
+            if not devices_list and not is_split_subscription(subscription):
                 await callback.answer(
                     texts.t('DEVICE_NONE_CONNECTED', 'ℹ️ У вас нет подключенных устройств'),
                     show_alert=True,
@@ -1394,21 +1397,28 @@ async def handle_all_devices_reset_from_management(
             success_count = 0
             failed_count = 0
 
-            for device in devices_list:
-                device_hwid = device.get('hwid')
-                if device_hwid:
-                    # remove_device сам логирует и возвращает False вместо исключения
-                    if await api.remove_device(panel_user_id, device_hwid):
-                        success_count += 1
-                        logger.info('✅ Устройство удалено', device_hwid=device_hwid)
+            split_reset = is_split_subscription(subscription)
+            if split_reset:
+                if await reset_subscription_devices(api, db, subscription, panel_user_id):
+                    success_count = len(devices_list)
+                else:
+                    failed_count = max(1, len(devices_list))
+            else:
+                for device in devices_list:
+                    device_hwid = device.get('hwid')
+                    if device_hwid:
+                        # remove_device сам логирует и возвращает False вместо исключения
+                        if await remove_subscription_device(api, db, subscription, panel_user_id, device_hwid):
+                            success_count += 1
+                            logger.info('✅ Устройство удалено', device_hwid=device_hwid)
+                        else:
+                            failed_count += 1
+                            logger.error('❌ Ошибка удаления устройства', device_hwid=device_hwid)
                     else:
                         failed_count += 1
-                        logger.error('❌ Ошибка удаления устройства', device_hwid=device_hwid)
-                else:
-                    failed_count += 1
-                    logger.warning('⚠️ У устройства нет HWID', device=device)
+                        logger.warning('⚠️ У устройства нет HWID', device=device)
 
-            if success_count > 0:
+            if success_count > 0 or (split_reset and failed_count == 0):
                 if failed_count == 0:
                     await callback.message.edit_text(
                         texts.t(

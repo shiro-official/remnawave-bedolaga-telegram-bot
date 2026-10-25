@@ -2724,13 +2724,17 @@ async def delete_user_device(
     subscription_id: int | None = Query(None, description='Subscription ID for multi-tariff'),
 ):
     """Delete a single device for user."""
+    from app.services.bs_device_policy import remove_subscription_device
+
     user = await get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
 
     _panel_user_id = None
+    selected_subscription = getattr(user, 'subscription', None)
     if subscription_id is not None:
-        _panel_user_id = (await _get_owned_subscription_or_404(db, subscription_id, user_id)).remnawave_id
+        selected_subscription = await _get_owned_subscription_or_404(db, subscription_id, user_id)
+        _panel_user_id = selected_subscription.remnawave_id
     else:
         _panel_user_id = user.remnawave_id
 
@@ -2742,7 +2746,7 @@ async def delete_user_device(
 
         service = RemnaWaveService()
         async with service.get_api_client() as api:
-            success = await api.remove_device(_panel_user_id, hwid)
+            success = await remove_subscription_device(api, db, selected_subscription, _panel_user_id, hwid)
 
         if success:
             logger.info('Admin deleted device for user', admin_id=admin.id, hwid=hwid, user_id=user_id)
@@ -2809,17 +2813,21 @@ async def reset_user_devices(
     subscription_id: int | None = Query(None, description='Subscription ID for multi-tariff'),
 ):
     """Reset all devices for user."""
+    from app.services.bs_device_policy import (
+        is_split_subscription,
+        remove_subscription_device,
+        reset_subscription_devices,
+    )
+
     user = await get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
 
     _rst_panel_user_id = None
-    if settings.is_multi_tariff_enabled() and subscription_id:
-        from app.database.crud.subscription import get_subscription_by_id_for_user
-
-        sub = await get_subscription_by_id_for_user(db, subscription_id, user_id)
-        if sub:
-            _rst_panel_user_id = sub.remnawave_id
+    selected_subscription = getattr(user, 'subscription', None)
+    if subscription_id is not None:
+        selected_subscription = await _get_owned_subscription_or_404(db, subscription_id, user_id)
+        _rst_panel_user_id = selected_subscription.remnawave_id
     else:
         _rst_panel_user_id = user.remnawave_id
 
@@ -2835,6 +2843,11 @@ async def reset_user_devices(
             devices = devices_info.get('devices', [])
             total = len(devices)
 
+            if is_split_subscription(selected_subscription):
+                if not await reset_subscription_devices(api, db, selected_subscription, _rst_panel_user_id):
+                    return ResetDevicesResponse(success=False, message='Failed to reset devices', deleted_count=0)
+                return ResetDevicesResponse(success=True, message=f'Deleted {total} devices', deleted_count=total)
+
             if total == 0:
                 return ResetDevicesResponse(success=True, message='No devices to reset', deleted_count=0)
 
@@ -2846,7 +2859,9 @@ async def reset_user_devices(
                     # `except` здесь уже недостижим, поэтому единственный признак
                     # успеха это результат. Без проверки эндпоинт рапортовал бы
                     # «Deleted 5/5 devices» при пяти отказах подряд.
-                    if await api.remove_device(_rst_panel_user_id, device_hwid):
+                    if await remove_subscription_device(
+                        api, db, selected_subscription, _rst_panel_user_id, device_hwid
+                    ):
                         deleted += 1
 
         logger.info('Admin reset devices for user /', admin_id=admin.id, user_id=user_id, deleted=deleted, total=total)

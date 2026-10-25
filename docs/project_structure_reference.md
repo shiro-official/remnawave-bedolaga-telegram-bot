@@ -1493,6 +1493,12 @@
 - `app/services/broadcast_service.py` — Python-модуль
   Классы: `BroadcastMediaConfig`, `BroadcastConfig`, `EmailBroadcastConfig`, `BroadcastService` (15 методов), `EmailBroadcastService` (15 методов)
   Функции: `parse_email_scoped_target` — Email-таргет с идентификатором: ``promo_group_{id}`` или ``user_{id}``., `cleanup_blocked_broadcast_users` — Фоновая очистка пользователей, заблокировавших бота (обнаруженных при рассылке).
+- `app/services/bs_account_identity.py` — Python-модуль
+  Классы: нет
+  Функции: `verify_bs_identity` — Never resolve a secondary through Telegram/email or a primary reservation.
+- `app/services/bs_device_policy.py` — Python-модуль
+  Классы: `BsDevicePolicyError`
+  Функции: `is_split_subscription`, `bs_device_lock` — Own a dedicated transaction; never commit/autoflush the caller's work., `device_hwids` — Require the complete per-user contract; a malformed list is not empty., `prepare_secondary_devices` — Prune stale secondary registrations, then mirror the actual primary limit., `confirm_secondary_devices` — Check the public gate and registry again before sending any BS keys., `remove_subscription_device` — Shared subscriptions retain their existing single-account behavior., `reset_subscription_devices`
 - `app/services/bs_subscription_composer.py` — Python-модуль
   Классы: `UnsupportedSubscription`, `SubscriptionDocument` (2 методов), `CompositionResult`
   Функции: `forwarded_device_headers` — Never accept client authorization, host, proxy, cookie or format override headers., `contains_account_credentials` — Reject panel error remarks that happen to be valid configurations., `compose_subscriptions` — Keep the primary admission result, profile headers and whole configurations.
@@ -2021,7 +2027,7 @@
   Функции: `get_traffic_reset_strategy` — Стратегия сброса трафика: настройка тарифа, иначе общая из конфига.
 - `app/services/panel_sync/writer.py` — Python-модуль
   Классы: `PanelWriteResult`
-  Функции: `push_subscription` — Отправить состояние подписки в панель., `prepare_bs_panel_account` — Prepare only a DISABLED secondary account using exact, recoverable identity., `patch_panel_account` — Обновить карточку аккаунта в панели, не трогая состояние подписки., `patch_panel_squads` — Переназначить аккаунту сквады тарифа.
+  Функции: `sync_bs_device_limit` — Mirror an explicit primary limit; never touch quota, keys, status or squads., `push_subscription` — Отправить состояние подписки в панель., `prepare_bs_panel_account` — Prepare only a DISABLED secondary account using exact, recoverable identity., `patch_panel_account` — Обновить карточку аккаунта в панели, не трогая состояние подписки., `patch_panel_squads` — Переназначить аккаунту сквады тарифа.
 
 #### app/services/payment
 
@@ -3677,6 +3683,9 @@
 - `tests/contracts/test_bschek_geo_client_paths_match_spec.py` — Python-модуль
   Классы: нет
   Функции: `test_every_geo_call_of_the_client_exists_in_the_spec`, `test_client_covers_the_five_endpoints_we_use`
+- `tests/contracts/test_device_mutation_surfaces_use_shared_policy.py` — Python-модуль
+  Классы: нет
+  Функции: `test_all_device_mutations_go_through_shared_subscription_policy`
 - `tests/contracts/test_local_day_guard.py` — Python-модуль
   Классы: нет
   Функции: `find_violations`, `test_known_utc_sites_still_exist` — Список исключений не должен пережить переименование: каждая функция обязана существовать., `test_detector_sees_every_idiom` — Сторож не ослеп: на синтетическом примере находит все пять идиом., `test_app_has_no_hand_made_utc_days`
@@ -3782,8 +3791,11 @@
 - `tests/database/test_bs_account_preparation_postgres.py` — Python-модуль
   Классы: `FakePanel` (6 методов)
   Функции: `single_period_tariffs`, `test_preparation_is_repeatable_and_never_changes_primary`, `test_lost_create_response_recovers_persisted_intent_without_duplicate`, `test_inbound_overlap_blocks_writes_and_intent_creation`, `test_trial_and_disabled_tariff_do_not_get_secondary`, `test_conflicting_username_is_never_adopted_or_modified`, `test_primary_id_collision_blocks_write_even_with_matching_marker`, `test_bs_account_is_in_backup_after_parent_subscription`, `test_secondary_cannot_be_written_or_adopted_as_primary`, `test_secondary_reservation_beats_corrupt_stored_primary_pointer`, `test_preparation_refuses_enabled_candidate_without_disabling_it`, `test_preparation_keeps_personal_bs_limit`, `test_concurrent_preparation_keeps_one_persisted_identity`, `test_preflight_error_releases_primary_lock`, `test_unconfirmed_panel_quota_leaves_a_retryable_intent`
+- `tests/database/test_bs_shared_devices_postgres.py` — Python-модуль
+  Классы: нет
+  Функции: `test_stale_secondary_is_pruned_before_its_atomic_public_admission`, `test_primary_actual_device_limit_is_mirrored_without_changing_other_fields`, `test_unconfirmed_primary_or_cleanup_never_issues_bs`, `test_explicit_unlimited_supports_clients_without_hwid`, `test_secondary_public_gate_is_not_bypassed_when_it_refuses_a_device`, `test_device_mutations_affect_both_accounts_secondary_first`, `test_secondary_failure_preserves_primary_registration`, `test_reset_cleans_stale_secondary_even_when_primary_is_empty`, `test_partial_delete_can_be_retried_without_claiming_success`, `test_foreign_secondary_cannot_be_reset`, `test_dirty_caller_is_neither_committed_nor_autoflushed_by_device_mutation`, `test_concurrent_new_devices_cannot_double_the_primary_slot_count`, `test_reset_waits_for_inflight_delivery_and_finishes_with_empty_registries`, `test_cancelled_lock_holder_releases_lock_and_other_subscriptions_do_not_block`, `test_split_operations_require_a_real_independent_database_session`, `test_legacy_context_cannot_skip_persisted_secondary`, `test_unconfirmed_limit_update_preserves_ordinary_and_recovers_on_retry`, `test_unregistered_secondary_appearing_during_fetch_is_not_delivered`, `test_empty_primary_ui_reset_still_cleans_secondary_and_reports_failure`, `test_busy_one_connection_caller_pool_cannot_deadlock_device_guard`, `test_uncommitted_new_shared_subscription_keeps_legacy_reset_without_commit`
 - `tests/database/test_bs_subscription_delivery_postgres.py` — Python-модуль
-  Классы: `FakePanel` (3 методов)
+  Классы: `FakePanel` (8 методов)
   Функции: `seed`, `test_active_split_delivers_both_without_changing_database`, `test_primary_hwid_refusal_never_contacts_bs`, `test_inactive_panel_identity_cannot_add_bs`, `test_trial_shared_and_unprepared_subscriptions_fetch_primary_only`, `test_local_denial_makes_no_panel_request`, `test_wrong_primary_panel_identity_never_receives_hwid`, `test_wrong_secondary_panel_identity_never_receives_hwid`, `test_secondary_reserved_as_another_primary_cannot_be_delivered`, `test_secondary_failure_preserves_ordinary_access`, `test_cancellation_is_propagated`, `test_http_200_error_remark_without_denial_header_cannot_add_bs`, `test_primary_reserved_as_bs_fails_before_panel_access`, `test_dirty_caller_transaction_cannot_be_autoflushed_by_delivery`, `test_missing_secondary_short_uuid_keeps_ordinary_access`
 - `tests/database/test_bs_traffic_migration_postgres.py` — Python-модуль
   Классы: нет
@@ -4464,6 +4476,9 @@
 - `tests/services/test_broadcast_per_recipient_keyboard.py` — Python-модуль
   Классы: нет
   Функции: `test_keyboard_factory_builds_personal_keyboard_per_recipient` — Каждому получателю уходит своя клавиатура, а не одна общая., `test_blocked_recipients_counted_separately` — Заблокировавшие бота идут в blocked, а не в общую кучу ошибок., `test_without_factory_shared_keyboard_is_used` — Обычные рассылки не затронуты: без фабрики уходит общая клавиатура.
+- `tests/services/test_bs_device_policy.py` — Python-модуль
+  Классы: нет
+  Функции: `test_malformed_device_registry_is_rejected`, `test_empty_and_complete_registry_are_accepted`, `test_shared_and_trial_operations_keep_single_account_behavior`
 - `tests/services/test_bs_subscription_composer.py` — Python-модуль
   Классы: нет
   Функции: `document`, `profile`, `clash`, `test_uri_and_base64_preserve_keys_and_primary_encoding`, `test_duplicate_identical_links_are_not_repeated`, `test_xray_full_profiles_keep_private_keys_and_internal_tags`, `test_clash_groups_and_colliding_names_are_rewritten_without_touching_keys`, `test_clash_generated_suffix_cannot_collide_with_existing_secondary_name`, `test_primary_http_200_hwid_refusal_is_preserved_even_with_valid_config`, `test_non_200_from_either_account_cannot_append_bs`, `test_secondary_hwid_denial_does_not_remove_ordinary_access_or_leak_its_headers`, `test_unsupported_or_empty_documents_preserve_primary`, `test_different_valid_formats_cannot_be_appended`, `test_oversized_and_oversized_combined_documents_preserve_primary`, `test_incompatible_clash_templates_keep_ordinary_document`, `test_headers_preserve_primary_quota_but_strip_cache_identifiers_and_private_data`, `test_only_device_metadata_is_forwarded_to_panel`, `test_account_credential_proof_supports_real_panel_formats`, `test_valid_looking_error_remarks_do_not_prove_account_access`, `test_accounts_without_credentials_cannot_prove_a_real_config`, `test_dynamic_clash_selectors_are_preserved_without_merging`
