@@ -32,6 +32,7 @@ class FakePanel:
                 traffic_limit_bytes=0,
                 used_traffic_bytes=42,
                 vless_uuid='main-key',
+                hwid_device_limit=2,
             ),
             2000: SimpleNamespace(
                 id=2000,
@@ -43,15 +44,52 @@ class FakePanel:
                 traffic_limit_bytes=1000,
                 used_traffic_bytes=42,
                 vless_uuid='bs-key',
+                hwid_device_limit=2,
             ),
         }
         self.responses = {
-            'primary-short': (200, MAIN, {'subscription-userinfo': 'download=42; total=0'}),
-            'secondary-short': (200, BS, {'subscription-userinfo': 'download=42; total=1000'}),
+            'primary-short': (200, MAIN, {'subscription-userinfo': 'download=42; total=0', 'x-hwid-active': 'true'}),
+            'secondary-short': (200, BS, {'subscription-userinfo': 'download=42; total=1000', 'x-hwid-active': 'true'}),
         }
         self.read_ids = []
         self.requests = []
         self.error_on_secondary = None
+        self.devices = {1000: {'device-123456'}, 2000: {'device-123456'}}
+        self.removed = []
+        self.resets = []
+        self.updates = []
+        self.fail_remove = set()
+        self.fail_reset = set()
+        self.ack_without_delete = set()
+        self.auto_register = True
+
+    async def get_user_devices(self, panel_id):
+        devices = [{'userId': panel_id, 'hwid': value} for value in sorted(self.devices[panel_id])]
+        return {'total': len(devices), 'devices': devices}
+
+    async def get_user_devices_all(self, panel_id):
+        return await self.get_user_devices(panel_id)
+
+    async def remove_device(self, panel_id, hwid):
+        self.removed.append((panel_id, hwid))
+        if panel_id in self.fail_remove:
+            return False
+        if panel_id not in self.ack_without_delete:
+            self.devices[panel_id].discard(hwid)
+        return True
+
+    async def reset_user_devices(self, panel_id):
+        self.resets.append(panel_id)
+        if panel_id in self.fail_reset:
+            return False
+        if panel_id not in self.ack_without_delete:
+            self.devices[panel_id].clear()
+        return True
+
+    async def update_user(self, *, user_id, hwid_device_limit):
+        self.updates.append({'user_id': user_id, 'hwid_device_limit': hwid_device_limit})
+        self.users[user_id].hwid_device_limit = hwid_device_limit
+        return self.users[user_id]
 
     async def get_user_by_id(self, panel_id):
         self.read_ids.append(panel_id)
@@ -61,7 +99,18 @@ class FakePanel:
 
     async def get_public_subscription_response(self, short_uuid, *, headers):
         self.requests.append((short_uuid, headers))
-        return self.responses[short_uuid]
+        response = self.responses[short_uuid]
+        panel_id = 1000 if short_uuid == 'primary-short' else 2000
+        hwid = headers.get('x-hwid')
+        limit = self.users[panel_id].hwid_device_limit
+        if self.auto_register and hwid and response[0] == 200 and 'x-hwid-limit' not in response[2]:
+            # The real public subscription path inserts a newly admitted HWID
+            # under its own atomic per-panel-user gate. Tests do not call the
+            # administrative create-device endpoint as an admission substitute.
+            if hwid not in self.devices[panel_id] and limit and len(self.devices[panel_id]) >= limit:
+                return 200, '', {'x-hwid-limit': 'true'}
+            self.devices[panel_id].add(hwid)
+        return response
 
 
 async def seed(db):

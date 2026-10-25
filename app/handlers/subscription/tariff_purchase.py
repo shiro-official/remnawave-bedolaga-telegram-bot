@@ -25,6 +25,7 @@ from app.database.database import AsyncSessionLocal
 from app.database.models import Tariff, Transaction, TransactionType, User
 from app.localization.texts import Texts, get_texts
 from app.services.admin_notification_service import AdminNotificationService
+from app.services.bs_device_policy import reset_subscription_devices
 from app.services.panel_sync import should_create_panel_account
 from app.services.subscription_service import SubscriptionService
 from app.services.tariff_switch_policy import remaining_days_for_switch, should_reset_used_traffic
@@ -3984,7 +3985,7 @@ async def confirm_tariff_switch(
                     # он ловит ошибку внутри и возвращает False. Без проверки
                     # результата лог утверждал бы, что сброс прошёл, когда он
                     # провалился, и старые HWID остались бы за новым лимитом.
-                    if await api.reset_user_devices(_reset_panel_id):
+                    if await reset_subscription_devices(api, db, subscription, _reset_panel_id):
                         logger.info('🔧 Сброшены устройства при смене тарифа для user_id', db_user_id=db_user.id)
                     else:
                         logger.error('Не удалось сбросить устройства при смене тарифа', db_user_id=db_user.id)
@@ -4278,7 +4279,7 @@ async def confirm_daily_tariff_switch(
                     # он ловит ошибку внутри и возвращает False. Без проверки
                     # результата лог утверждал бы, что сброс прошёл, когда он
                     # провалился, и старые HWID остались бы за новым лимитом.
-                    if await api.reset_user_devices(_reset_panel_id_daily):
+                    if await reset_subscription_devices(api, db, subscription, _reset_panel_id_daily):
                         logger.info(
                             '🔧 Сброшены устройства при смене на суточный тариф для user_id', db_user_id=db_user.id
                         )
@@ -5288,7 +5289,7 @@ async def confirm_instant_switch(
                     # он ловит ошибку внутри и возвращает False. Без проверки
                     # результата лог утверждал бы, что сброс прошёл, когда он
                     # провалился, и старые HWID остались бы за новым лимитом.
-                    if await api.reset_user_devices(_reset_panel_id_instant):
+                    if await reset_subscription_devices(api, db, subscription, _reset_panel_id_instant):
                         logger.info(
                             '🔧 Сброшены устройства при мгновенном переключении тарифа для user_id',
                             db_user_id=db_user.id,

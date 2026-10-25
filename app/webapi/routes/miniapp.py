@@ -57,6 +57,7 @@ from app.database.models import (
     TransactionType,
     User,
 )
+from app.services.bs_device_policy import remove_subscription_device
 from app.services.faq_service import FaqService
 from app.services.maintenance_service import maintenance_service
 from app.services.payment_service import PaymentService, get_wata_payment_by_link_id
@@ -4465,7 +4466,7 @@ async def remove_connected_device(
 
     try:
         async with service.get_api_client() as api:
-            success = await api.remove_device(panel_user_id, hwid)
+            success = await remove_subscription_device(api, db, user.subscription, panel_user_id, hwid)
     except RemnaWaveConfigurationError as error:
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE,

@@ -2896,7 +2896,9 @@ class RemnaWaveService:
                         # False — `except` ниже для этого случая уже недостижим,
                         # и без проверки результата провал сброса не оставил бы
                         # здесь ни одной записи в логе.
-                        if not await api.reset_user_devices(_panel_user_id):
+                        from app.services.bs_device_policy import reset_subscription_devices
+
+                        if not await reset_subscription_devices(api, db, None, _panel_user_id):
                             logger.error('Failed to reset devices for panel user', panel_user_id=_panel_user_id)
                 except Exception as e:
                     logger.warning('Failed to reset devices for panel user', panel_user_id=_panel_user_id, error=e)

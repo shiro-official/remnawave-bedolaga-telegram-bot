@@ -19,6 +19,7 @@ from app.database.crud.tariff import get_tariff_by_id
 from app.database.crud.transaction import create_transaction
 from app.database.crud.user import subtract_user_balance
 from app.database.models import PaymentMethod, Subscription, TransactionType, User
+from app.services.bs_device_policy import reset_subscription_devices
 from app.services.pricing_engine import pricing_engine
 from app.services.remnawave_service import RemnaWaveService
 from app.services.subscription_service import SubscriptionService
@@ -563,7 +564,7 @@ async def switch_tariff(
                 # 3.0.0: сброс делается одним delete-all и исключений наружу не
                 # бросает — сбой панели приходит как False, поэтому флаг ставим
                 # по результату, а не по «не упало».
-                devices_reset = await api.reset_user_devices(_switch_panel_user_id)
+                devices_reset = await reset_subscription_devices(api, db, subscription, _switch_panel_user_id)
                 if devices_reset:
                     logger.info('Reset all devices for user on tariff switch', user_id=user.id)
                 else:

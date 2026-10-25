@@ -4255,6 +4255,8 @@ async def confirm_reset_devices(callback: types.CallbackQuery, db_user: User):
 @admin_required
 @error_handler
 async def reset_user_devices(callback: types.CallbackQuery, db_user: User, db: AsyncSession):
+    from app.services.bs_device_policy import reset_subscription_devices
+
     user_id, subscription_id = _extract_admin_sub_context(callback.data)
 
     back_cb = (
@@ -4266,6 +4268,7 @@ async def reset_user_devices(callback: types.CallbackQuery, db_user: User, db: A
     try:
         user = await get_user_by_id(db, user_id)
         panel_user_id = None
+        subscription = getattr(user, 'subscription', None) if user else None
         if subscription_id and settings.is_multi_tariff_enabled():
             from app.database.crud.subscription import get_subscription_by_id_for_user
 
@@ -4282,7 +4285,7 @@ async def reset_user_devices(callback: types.CallbackQuery, db_user: User, db: A
 
         remnawave_service = RemnaWaveService()
         async with remnawave_service.get_api_client() as api:
-            success = await api.reset_user_devices(panel_user_id)
+            success = await reset_subscription_devices(api, db, subscription, panel_user_id)
 
         if success:
             await callback.message.edit_text(
