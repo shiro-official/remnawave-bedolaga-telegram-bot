@@ -1,0 +1,11 @@
+{
+  "OVERPAY_INT_AMOUNT_TOO_LOW": "حداقل مبلغ برای پرداخت به یورو: {min_eur}€ (≈ {min_rub}₽)",
+  "PLATEGA_AMOUNT_TOO_LOW": "حداقل مبلغ پرداخت Platega: {amount}",
+  "PLATEGA_AMOUNT_TOO_HIGH": "حداکثر مبلغ پرداخت Platega: {amount}",
+  "WATA_AMOUNT_TOO_HIGH": "حداکثر مبلغ: {amount}",
+  "WATA_AMOUNT_TOO_LOW": "حداقل مبلغ: {amount}",
+  "PAYMENT_AMOUNT_TOO_LOW": "حداقل مبلغ شارژ: {min_amount}₽",
+  "PAYMENT_AMOUNT_TOO_HIGH": "حداکثر مبلغ شارژ: {max_amount}₽",
+  "AMOUNT_TOO_LOW": "حداقل مبلغ شارژ: {min_amount:.0f}₽",
+  "AMOUNT_TOO_HIGH": "حداکثر مبلغ شارژ: {max_amount:,.0f}₽"
+}

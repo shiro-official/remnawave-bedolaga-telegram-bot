@@ -49,6 +49,7 @@ services:
       retries: 3
 
   bot:
+    user: root
     build: .
     container_name: remnawave_bot
     restart: unless-stopped

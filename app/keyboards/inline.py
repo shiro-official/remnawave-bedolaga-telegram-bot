@@ -807,6 +807,46 @@ def get_main_menu_keyboard(
     if (not is_admin) and is_moderator:
         keyboard.append([InlineKeyboardButton(text='🧑‍⚖️ Модерация', callback_data='moderator_panel')])
 
+    # eBunny: custom emoji only on the ordinary main-menu keyboard.
+    # Keep existing button actions, labels, row layout and colors.
+    from app.utils.miniapp_buttons import strip_leading_emoji
+
+    main_menu_emoji_ids = {
+        'menu_balance': '5258204546391351475',
+        'menu_subscription': '5316727448644103237',
+        'subscription_connect': '5258152182150077732',
+        'open_subscription_link': '5258152182150077732',
+        'menu_promocode': '5257965810634202885',
+        'menu_referrals': '5258362837411045098',
+        'menu_support': '5255813559572508065',
+        'menu_info': '5258503720928288433',
+        'menu_language': '5260268501515377807',
+        'menu_buy': '5258204546391351475',
+        'menu_trial': '5258093637450866522',
+        'admin_panel': '5258096772776991776',
+    }
+    connect_label = texts.t('CONNECT_BUTTON', '🔗 Подключиться')
+    for row in keyboard:
+        for index, button in enumerate(row):
+            emoji_id = main_menu_emoji_ids.get(button.callback_data or '')
+            # The connect button can also open a URL or a Mini App directly.
+            if not emoji_id and button.text == connect_label and (button.url or button.web_app):
+                emoji_id = main_menu_emoji_ids['subscription_connect']
+            if emoji_id:
+                row[index] = button.model_copy(
+                    update={
+                        'text': strip_leading_emoji(button.text),
+                        'icon_custom_emoji_id': emoji_id,
+                        'style': (
+                            'danger'
+                            if button.callback_data == 'admin_panel'
+                            else 'success'
+                            if emoji_id == main_menu_emoji_ids['subscription_connect']
+                            else button.style
+                        ),
+                    }
+                )
+
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
