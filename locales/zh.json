@@ -1,0 +1,11 @@
+{
+  "OVERPAY_INT_AMOUNT_TOO_LOW": "欧元支付的最低金额：{min_eur}€（≈ {min_rub}₽）",
+  "PLATEGA_AMOUNT_TOO_LOW": "通过Platega支付的最低金额为：{amount}",
+  "PLATEGA_AMOUNT_TOO_HIGH": "通过Platega支付的最高金额为：{amount}",
+  "WATA_AMOUNT_TOO_HIGH": "最高充值金额：{amount}",
+  "WATA_AMOUNT_TOO_LOW": "最低充值金额：{amount}",
+  "PAYMENT_AMOUNT_TOO_LOW": "最低充值金额：{min_amount}₽",
+  "PAYMENT_AMOUNT_TOO_HIGH": "最高充值金额：{max_amount}₽",
+  "AMOUNT_TOO_LOW": "最低充值金额：{min_amount:.0f}₽",
+  "AMOUNT_TOO_HIGH": "最高充值金额：{max_amount:,.0f}₽"
+}

@@ -1,0 +1,11 @@
+{
+  "OVERPAY_INT_AMOUNT_TOO_LOW": "Minimum amount for payment in euros: {min_eur}€ (≈ {min_rub}₽)",
+  "PLATEGA_AMOUNT_TOO_LOW": "Minimum amount for Platega: {amount}",
+  "PLATEGA_AMOUNT_TOO_HIGH": "Maximum amount for Platega: {amount}",
+  "WATA_AMOUNT_TOO_HIGH": "Maximum top-up amount: {amount}",
+  "WATA_AMOUNT_TOO_LOW": "Minimum top-up amount: {amount}",
+  "PAYMENT_AMOUNT_TOO_LOW": "Minimum top-up amount: {min_amount}₽",
+  "PAYMENT_AMOUNT_TOO_HIGH": "Maximum top-up amount: {max_amount}₽",
+  "AMOUNT_TOO_LOW": "Minimum top-up amount: {min_amount:.0f}₽",
+  "AMOUNT_TOO_HIGH": "Maximum top-up amount: {max_amount:,.0f}₽"
+}

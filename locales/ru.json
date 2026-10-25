@@ -1,0 +1,11 @@
+{
+  "OVERPAY_INT_AMOUNT_TOO_LOW": "Минимальная сумма для оплаты в евро: {min_eur}€ (≈ {min_rub}₽)",
+  "PLATEGA_AMOUNT_TOO_LOW": "Минимальная сумма для оплаты через Platega: {amount}",
+  "PLATEGA_AMOUNT_TOO_HIGH": "Максимальная сумма для оплаты через Platega: {amount}",
+  "WATA_AMOUNT_TOO_HIGH": "Максимальная сумма пополнения: {amount}",
+  "WATA_AMOUNT_TOO_LOW": "Минимальная сумма пополнения: {amount}",
+  "PAYMENT_AMOUNT_TOO_LOW": "Минимальная сумма пополнения: {min_amount}₽",
+  "PAYMENT_AMOUNT_TOO_HIGH": "Максимальная сумма пополнения: {max_amount}₽",
+  "AMOUNT_TOO_LOW": "Минимальная сумма пополнения: {min_amount:.0f}₽",
+  "AMOUNT_TOO_HIGH": "Максимальная сумма пополнения: {max_amount:,.0f}₽"
+}
