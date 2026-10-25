@@ -1485,11 +1485,15 @@ class RemnaWaveAPI:
             raise RemnaWaveAPIError('Invalid public subscription identifier')
         if client_type is not None and client_type not in ('json', 'v2ray-json', 'clash', 'mihomo', 'stash', 'singbox'):
             raise RemnaWaveAPIError('Invalid public subscription client type')
-        suffix = f'/{client_type}' if client_type is not None else ''
         limit = 4 * 1024 * 1024
-        async with self.session.get(
-            f'{self.base_url}/api/sub/{short_uuid}{suffix}', headers=headers, allow_redirects=False
-        ) as response:
+        request = (
+            self.session.get(
+                f'{self.base_url}/api/sub/{short_uuid}/{client_type}', headers=headers, allow_redirects=False
+            )
+            if client_type is not None
+            else self.session.get(f'{self.base_url}/api/sub/{short_uuid}', headers=headers, allow_redirects=False)
+        )
+        async with request as response:
             if 300 <= response.status < 400:
                 raise RemnaWaveAPIError('Public subscription redirect refused')
             body = bytearray()
