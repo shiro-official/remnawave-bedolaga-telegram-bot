@@ -3031,6 +3031,27 @@ class SubscriptionBsAccount(Base):
     )
 
 
+class SubscriptionPublicLink(Base):
+    """Opaque public capability bound to the exact pair; plaintext token is never stored here."""
+
+    __tablename__ = 'subscription_public_links'
+
+    id = Column(Integer, primary_key=True)
+    subscription_id = Column(Integer, ForeignKey('subscriptions.id', ondelete='CASCADE'), nullable=False, unique=True)
+    token_hash = Column(String(64), nullable=False, unique=True)
+    enabled = Column(Boolean, nullable=False, default=False, server_default='false')
+    primary_id = Column(BigInteger, nullable=False)
+    primary_short_uuid = Column(String(255), nullable=False)
+    secondary_id = Column(BigInteger, nullable=False)
+    secondary_short_uuid = Column(String(255), nullable=False)
+    rotation_pending = Column(Boolean, nullable=False, default=False, server_default='false')
+    rotation_intent = Column(JSON, nullable=True)
+    created_at = Column(AwareDateTime(), nullable=False, default=func.now(), server_default=func.now())
+    updated_at = Column(
+        AwareDateTime(), nullable=False, default=func.now(), onupdate=func.now(), server_default=func.now()
+    )
+
+
 class TrafficPurchase(Base):
     """Докупка трафика с индивидуальной датой истечения."""
 

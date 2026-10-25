@@ -9,6 +9,8 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from structlog.contextvars import bound_contextvars
 
+from app.services.bs_public_link_tokens import redact_public_subscription_path
+
 
 logger = structlog.get_logger('web_api')
 
@@ -17,7 +19,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
     """Логирование входящих запросов в административный API."""
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        with bound_contextvars(http_method=request.method, http_path=request.url.path):
+        path = redact_public_subscription_path(request.url.path)
+        with bound_contextvars(http_method=request.method, http_path=path):
             start = monotonic()
             response: Response | None = None
             try:
@@ -27,12 +30,13 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 logger.error(
                     'Database connection error while handling request',
                     method=request.method,
-                    path=request.url.path,
-                    e=str(e)[:200],
+                    path=path,
+                    e=type(e).__name__ if path != request.url.path else str(e)[:200],
                 )
                 response = JSONResponse(
                     status_code=503,
                     content={'detail': 'Service temporarily unavailable. Please try again later.'},
+                    headers={'Cache-Control': 'no-store, private'} if path != request.url.path else None,
                 )
                 return response
             finally:
@@ -41,7 +45,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 logger.debug(
                     'Request handled',
                     method=request.method,
-                    path=request.url.path,
+                    path=path,
                     status=status,
                     duration_ms=duration_ms,
                 )
@@ -60,7 +64,7 @@ class RequestPathContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         from app.services.user_action_log_service import bind_request_path, reset_request_path
 
-        token = bind_request_path(request.url.path)
+        token = bind_request_path(redact_public_subscription_path(request.url.path))
         try:
             return await call_next(request)
         finally:

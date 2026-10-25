@@ -34,6 +34,7 @@ from app.external.remnawave_api import (
     RemnaWaveInvalidUserIdError,
     coerce_panel_user_id,
 )
+from app.services.bs_public_link_tokens import apply_panel_subscription_links
 from app.services.panel_sync import (
     BULK_SNAPSHOT,
     link_subscription_panel_identity,
@@ -3255,8 +3256,9 @@ class RemnaWaveService:
                                     rw_user = await api.get_user_by_id(_lookup_panel_id)
                                     if rw_user:
                                         subscription.remnawave_short_uuid = rw_user.short_uuid
-                                        subscription.subscription_url = rw_user.subscription_url
-                                        subscription.subscription_crypto_link = rw_user.happ_crypto_link
+                                        apply_panel_subscription_links(
+                                            subscription, rw_user.subscription_url, rw_user.happ_crypto_link
+                                        )
                                         logger.info(
                                             '🔧 Восстановлены данные Remnawave для пользователя',
                                             telegram_id=user.telegram_id,

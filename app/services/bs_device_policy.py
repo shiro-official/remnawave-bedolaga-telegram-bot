@@ -27,7 +27,7 @@ class BsDevicePolicyError(ValueError):
 
 
 @asynccontextmanager
-async def _independent_session(db):
+async def bs_device_session(db):
     bind = getattr(db, 'bind', None)
     if not isinstance(bind, AsyncEngine) or bind.dialect.name != 'postgresql':
         raise BsDevicePolicyError('Shared devices require an independent PostgreSQL session')
@@ -67,7 +67,7 @@ async def bs_device_lock(db, subscription_id: int):
     automatically released on success, exceptions, cancellation and disconnect.
     An AsyncConnection-bound session cannot guarantee independent ownership.
     """
-    async with _independent_session(db) as locked_db, locked_db.begin():
+    async with bs_device_session(db) as locked_db, locked_db.begin():
         await locked_db.execute(text("SET LOCAL lock_timeout = '5s'"))
         await locked_db.execute(
             text('SELECT pg_advisory_xact_lock(:namespace, :subscription_id)'),
@@ -175,7 +175,7 @@ async def _mutate_split_devices(db, api, subscription_id, primary_id, hwid):
         foreign = await find_foreign_panel_owner(
             locked_db, subscription.user, subscription, primary_id, multi_tariff=False
         )
-        primary = await api.get_user_by_id(primary_id) if foreign is None else None
+        primary = await api.get_user_identity(primary_id) if foreign is None else None
         if primary is None or primary.id != primary_id or primary.short_uuid != subscription.remnawave_short_uuid:
             raise BsAccountIdentityError('Primary device owner could not be confirmed')
         account = await locked_db.scalar(
@@ -213,12 +213,12 @@ async def _device_subscription_id(db, subscription, primary_id):
         # A newly flushed shared subscription may still belong to the caller's
         # uncommitted purchase transaction. Preserve that legacy reset path;
         # do not wait on its row lock or commit it from another session.
-        async with _independent_session(db) as lookup_db:
+        async with bs_device_session(db) as lookup_db:
             return await lookup_db.scalar(select(Subscription.id).where(Subscription.id == subscription.id))
     if subscription is None:
         # Legacy surfaces may only know users.remnawave_id. Resolve the exact
         # subscription rather than silently skipping the secondary account.
-        async with _independent_session(db) as lookup_db:
+        async with bs_device_session(db) as lookup_db:
             return await lookup_db.scalar(select(Subscription.id).where(Subscription.remnawave_id == primary_id))
     return None
 

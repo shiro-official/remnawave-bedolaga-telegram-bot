@@ -108,6 +108,7 @@ from app.database.models import (
     SubscriptionBsAccount,
     SubscriptionConversion,
     SubscriptionEvent,
+    SubscriptionPublicLink,
     SubscriptionServer,
     SubscriptionTemporaryAccess,
     SupportAuditLog,
@@ -229,6 +230,7 @@ class BackupService:
             UserMessage,
             Subscription,
             SubscriptionBsAccount,
+            SubscriptionPublicLink,
             SubscriptionServer,
             SubscriptionConversion,
             Transaction,
@@ -1687,6 +1689,7 @@ class BackupService:
             # --- User engagement ---
             'subscription_events',
             'subscription_bs_accounts',
+            'subscription_public_links',
             'traffic_purchases',
             'user_promo_groups',
             'withdrawal_requests',
