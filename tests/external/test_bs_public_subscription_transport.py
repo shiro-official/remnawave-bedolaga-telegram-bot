@@ -13,6 +13,7 @@ from app.external.remnawave_api import RemnaWaveAPI, RemnaWaveAPIError
 async def panel_server(handler):
     app = web.Application()
     app.router.add_get('/api/sub/{short_uuid}', handler)
+    app.router.add_get('/api/sub/{short_uuid}/{client_type}', handler)
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, '127.0.0.1', 0)
@@ -97,4 +98,33 @@ async def test_invalid_short_uuid_never_makes_a_request(short_uuid):
     async with panel_server(handle) as api:
         with pytest.raises(RemnaWaveAPIError, match='identifier'):
             await api.get_public_subscription_response(short_uuid)
+    assert requests == []
+
+
+@pytest.mark.parametrize('client_type', ['json', 'v2ray-json', 'clash', 'mihomo', 'stash', 'singbox'])
+@pytest.mark.asyncio
+async def test_client_type_is_forwarded_as_a_validated_path_segment(client_type):
+    requests = []
+
+    async def handle(request):
+        requests.append(dict(request.match_info))
+        return web.Response(text='configuration')
+
+    async with panel_server(handle) as api:
+        status, body, _ = await api.get_public_subscription_response('primary-short', client_type=client_type)
+    assert status == 200 and body == 'configuration'
+    assert requests == [{'short_uuid': 'primary-short', 'client_type': client_type}]
+
+
+@pytest.mark.asyncio
+async def test_client_type_cannot_inject_a_path_or_query():
+    requests = []
+
+    async def handle(request):
+        requests.append(request.path)
+        return web.Response(text='unexpected')
+
+    async with panel_server(handle) as api:
+        with pytest.raises(RemnaWaveAPIError, match='client type'):
+            await api.get_public_subscription_response('primary-short', client_type='../../users?secret=x')
     assert requests == []

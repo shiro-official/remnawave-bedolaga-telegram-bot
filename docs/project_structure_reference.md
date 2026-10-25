@@ -643,7 +643,7 @@
   Классы: нет
   Функции: `run_alembic_upgrade` — Run ``alembic upgrade head``, handling fresh and legacy databases., `stamp_alembic_head` — Stamp the DB as being at head without running migrations (for existing DBs).
 - `app/database/models.py` — Python-модуль
-  Классы: `AwareDateTime` (2 методов), `UserStatus`, `SubscriptionStatus`, `TransactionType`, `PromoCodeType`, `PaymentMethod`, `MainMenuButtonActionType`, `MainMenuButtonVisibility`, `WheelPrizeType`, `WheelSpinPaymentType`, `YooKassaPayment` (6 методов), `SavedPaymentMethod` (1 методов), `CryptoBotPayment` (5 методов), `AppleTransaction` (2 методов), `AppleIAPAccount` (1 методов), `AppleNotification` (1 методов), `AppleIAPAbuseEvent` (1 методов), `HeleketPayment` (5 методов), `MulenPayPayment` (2 методов), `Pal24Payment` (3 методов), `WataPayment` (2 методов), `PlategaPayment` (2 методов), `PlategaSubscription` (1 методов), `LavaSubscription` (1 методов), `CasheraSubscription` (1 методов), `CloudPaymentsPayment` (5 методов), `FreekassaPayment` (5 методов), `KassaAiPayment` (5 методов), `RioPayPayment` (5 методов), `SeverPayPayment` (5 методов), `PayPearPayment` (5 методов), `RollyPayPayment` (5 методов), `OverpayPayment` (5 методов), `AuraPayPayment` (5 методов), `EtoplatezhiPayment` (5 методов), `AntilopayPayment` (5 методов), `JupiterPayment` (5 методов), `DonutPayment` (5 методов), `LavaPayment` (5 методов), `CisPayPayment` (5 методов), `CasheraPayment` (5 методов), `TabPayPayment` (5 методов), `ParityPayPayment` (5 методов), `PromoGroup` (3 методов), `UserPromoGroup` (1 методов), `Tariff` (21 методов), `PartnerStatus`, `User` (12 методов), `Subscription` (15 методов), `GraceAccessSessionModel`, `SubscriptionBsAccount`, `TrafficPurchase` (1 методов), `Transaction` (1 методов), `SubscriptionConversion` (2 методов), `PromoCode` (2 методов), `PromoCodeUse`, `CouponStatus`, `CouponBatch` (2 методов), `Coupon` (1 методов), `ReferralRewardType`, `ReferralRewardTrigger`, `ReferralRewardMode`, `ReferralRewardLevel` (1 методов), `ReferralEarning` (1 методов), `WithdrawalRequestStatus`, `WithdrawalRequest` (1 методов), `PartnerApplication`, `ReferralContest` (1 методов), `ReferralContestEvent` (1 методов), `ReferralContestVirtualParticipant` (1 методов), `ContestTemplate`, `ContestRound`, `ContestAttempt`, `Squad` (1 методов), `ServiceRule`, `PrivacyPolicy`, `PublicOffer`, `LegalConsent`, `RecurrentPayments`, `FaqSetting`, `FaqPage`, `SystemSetting`, `EmailTemplate`, `MonitoringLog`, `SentNotification`, `SubscriptionEvent`, `DiscountOffer`, `PromoOfferTemplate`, `SubscriptionTemporaryAccess`, `PromoOfferLog`, `BroadcastHistory`, `Poll`, `PollQuestion`, `PollOption`, `PollResponse`, `PollAnswer`, `ServerSquad` (3 методов), `SubscriptionServer`, `SupportAuditLog`, `UserMessage` (1 методов), `WelcomeText`, `PinnedMessage`, `AdvertisingCampaign` (4 методов), `AdvertisingCampaignRegistration` (1 методов), `TicketStatus`, `Ticket` (8 методов), `TicketMessage` (3 методов), `WebApiToken` (1 методов), `MainMenuButton` (3 методов), `MenuLayoutHistory` (1 методов), `ButtonClickLog` (1 методов), `Webhook` (1 методов), `WebhookDelivery` (1 методов), `CabinetRefreshToken` (4 методов), `WheelConfig` (1 методов), `WheelPrize` (1 методов), `WheelSpin` (3 методов), `TicketNotification` (1 методов), `PaymentMethodConfig` (1 методов), `RequiredChannel` (1 методов), `UserChannelSubscription` (1 методов), `AdminRole` (1 методов), `UserRole` (1 методов), `AccessPolicy` (1 методов), `AdminAuditLog` (1 методов), `LandingPage` (1 методов), `GuestPurchaseStatus`, `GuestPurchase` (1 методов), `NewsArticle` (1 методов), `NewsCategory` (1 методов), `NewsTag` (1 методов), `YandexClientIdMap`, `InfoPage`, `UserDeviceAlias`, `SystemErrorEvent`, `EmailQueueItem`, `ReachabilityBatch`, `ReachabilityJob`, `ReachabilityLeg`, `ReachabilityTargetPref`, `DpiCheckerAction`, `UserReminder` (1 методов), `UserReminderState`
+  Классы: `AwareDateTime` (2 методов), `UserStatus`, `SubscriptionStatus`, `TransactionType`, `PromoCodeType`, `PaymentMethod`, `MainMenuButtonActionType`, `MainMenuButtonVisibility`, `WheelPrizeType`, `WheelSpinPaymentType`, `YooKassaPayment` (6 методов), `SavedPaymentMethod` (1 методов), `CryptoBotPayment` (5 методов), `AppleTransaction` (2 методов), `AppleIAPAccount` (1 методов), `AppleNotification` (1 методов), `AppleIAPAbuseEvent` (1 методов), `HeleketPayment` (5 методов), `MulenPayPayment` (2 методов), `Pal24Payment` (3 методов), `WataPayment` (2 методов), `PlategaPayment` (2 методов), `PlategaSubscription` (1 методов), `LavaSubscription` (1 методов), `CasheraSubscription` (1 методов), `CloudPaymentsPayment` (5 методов), `FreekassaPayment` (5 методов), `KassaAiPayment` (5 методов), `RioPayPayment` (5 методов), `SeverPayPayment` (5 методов), `PayPearPayment` (5 методов), `RollyPayPayment` (5 методов), `OverpayPayment` (5 методов), `AuraPayPayment` (5 методов), `EtoplatezhiPayment` (5 методов), `AntilopayPayment` (5 методов), `JupiterPayment` (5 методов), `DonutPayment` (5 методов), `LavaPayment` (5 методов), `CisPayPayment` (5 методов), `CasheraPayment` (5 методов), `TabPayPayment` (5 методов), `ParityPayPayment` (5 методов), `PromoGroup` (3 методов), `UserPromoGroup` (1 методов), `Tariff` (21 методов), `PartnerStatus`, `User` (12 методов), `Subscription` (15 методов), `GraceAccessSessionModel`, `SubscriptionBsAccount`, `SubscriptionPublicLink`, `TrafficPurchase` (1 методов), `Transaction` (1 методов), `SubscriptionConversion` (2 методов), `PromoCode` (2 методов), `PromoCodeUse`, `CouponStatus`, `CouponBatch` (2 методов), `Coupon` (1 методов), `ReferralRewardType`, `ReferralRewardTrigger`, `ReferralRewardMode`, `ReferralRewardLevel` (1 методов), `ReferralEarning` (1 методов), `WithdrawalRequestStatus`, `WithdrawalRequest` (1 методов), `PartnerApplication`, `ReferralContest` (1 методов), `ReferralContestEvent` (1 методов), `ReferralContestVirtualParticipant` (1 методов), `ContestTemplate`, `ContestRound`, `ContestAttempt`, `Squad` (1 методов), `ServiceRule`, `PrivacyPolicy`, `PublicOffer`, `LegalConsent`, `RecurrentPayments`, `FaqSetting`, `FaqPage`, `SystemSetting`, `EmailTemplate`, `MonitoringLog`, `SentNotification`, `SubscriptionEvent`, `DiscountOffer`, `PromoOfferTemplate`, `SubscriptionTemporaryAccess`, `PromoOfferLog`, `BroadcastHistory`, `Poll`, `PollQuestion`, `PollOption`, `PollResponse`, `PollAnswer`, `ServerSquad` (3 методов), `SubscriptionServer`, `SupportAuditLog`, `UserMessage` (1 методов), `WelcomeText`, `PinnedMessage`, `AdvertisingCampaign` (4 методов), `AdvertisingCampaignRegistration` (1 методов), `TicketStatus`, `Ticket` (8 методов), `TicketMessage` (3 методов), `WebApiToken` (1 методов), `MainMenuButton` (3 методов), `MenuLayoutHistory` (1 методов), `ButtonClickLog` (1 методов), `Webhook` (1 методов), `WebhookDelivery` (1 методов), `CabinetRefreshToken` (4 методов), `WheelConfig` (1 методов), `WheelPrize` (1 методов), `WheelSpin` (3 методов), `TicketNotification` (1 методов), `PaymentMethodConfig` (1 методов), `RequiredChannel` (1 методов), `UserChannelSubscription` (1 методов), `AdminRole` (1 методов), `UserRole` (1 методов), `AccessPolicy` (1 методов), `AdminAuditLog` (1 методов), `LandingPage` (1 методов), `GuestPurchaseStatus`, `GuestPurchase` (1 методов), `NewsArticle` (1 методов), `NewsCategory` (1 методов), `NewsTag` (1 методов), `YandexClientIdMap`, `InfoPage`, `UserDeviceAlias`, `SystemErrorEvent`, `EmailQueueItem`, `ReachabilityBatch`, `ReachabilityJob`, `ReachabilityLeg`, `ReachabilityTargetPref`, `DpiCheckerAction`, `UserReminder` (1 методов), `UserReminderState`
   Функции: нет
 
 #### app/database/crud
@@ -919,7 +919,7 @@
   Классы: `Pal24APIError`, `Pal24Response` (2 методов), `Pal24Client` (14 методов)
   Функции: нет
 - `app/external/remnawave_api.py` — Python-модуль
-  Классы: `UserStatus`, `TrafficLimitStrategy`, `UserTraffic`, `RemnaWaveUser` (4 методов), `RemnaWaveInbound`, `RemnaWaveInternalSquad`, `RemnaWaveAccessibleNode`, `RemnaWaveHost`, `RemnaWaveNode` (2 методов), `SubscriptionInfo`, `SubscriptionPageConfig`, `RemnaWaveExternalSquad`, `RemnaWaveTransientError`, `RemnaWaveAPI` (109 методов)
+  Классы: `UserStatus`, `TrafficLimitStrategy`, `UserTraffic`, `RemnaWaveUser` (4 методов), `RemnaWaveInbound`, `RemnaWaveInternalSquad`, `RemnaWaveAccessibleNode`, `RemnaWaveHost`, `RemnaWaveNode` (2 методов), `SubscriptionInfo`, `SubscriptionPageConfig`, `RemnaWaveExternalSquad`, `RemnaWaveTransientError`, `RemnaWaveAPI` (111 методов)
   Функции: `is_valid_internal_squad_name` — Имя сквада, которое примет панель., `is_expire_in_past_error` — Панель отвергла ``expireAt`` как прошедшую дату., `is_user_not_found_error` — Панель сообщила, что такого пользователя НЕТ (удалён / протух идентификатор)., `is_stale_external_squad_error` — Панель отвергла запись из-за ``externalSquadUuid`` (или не смогла её отличить)., `format_bytes`, `parse_bytes`, `test_api_connection`
 - `app/external/remnawave_errors.py` — Python-модуль
   Классы: `RemnaWaveAPIError` (1 методов), `RemnaWaveInvalidUserIdError`
@@ -1498,13 +1498,22 @@
   Функции: `verify_bs_identity` — Never resolve a secondary through Telegram/email or a primary reservation.
 - `app/services/bs_device_policy.py` — Python-модуль
   Классы: `BsDevicePolicyError`
-  Функции: `is_split_subscription`, `bs_device_lock` — Own a dedicated transaction; never commit/autoflush the caller's work., `device_hwids` — Require the complete per-user contract; a malformed list is not empty., `prepare_secondary_devices` — Prune stale secondary registrations, then mirror the actual primary limit., `confirm_secondary_devices` — Check the public gate and registry again before sending any BS keys., `remove_subscription_device` — Shared subscriptions retain their existing single-account behavior., `reset_subscription_devices`
+  Функции: `bs_device_session`, `is_split_subscription`, `bs_device_lock` — Own a dedicated transaction; never commit/autoflush the caller's work., `device_hwids` — Require the complete per-user contract; a malformed list is not empty., `prepare_secondary_devices` — Prune stale secondary registrations, then mirror the actual primary limit., `confirm_secondary_devices` — Check the public gate and registry again before sending any BS keys., `remove_subscription_device` — Shared subscriptions retain their existing single-account behavior., `reset_subscription_devices`
+- `app/services/bs_public_link_revoke.py` — Python-модуль
+  Классы: нет
+  Функции: `revoke_split_public_link` — No successful result until BOTH accounts and the new capability are saved.
+- `app/services/bs_public_link_service.py` — Python-модуль
+  Классы: `PreparedPublicLink`
+  Функции: `prepare_public_link` — Mint a disabled candidate. Does not publish it, activate users or edit their URL., `disable_public_link` — Immediately stop future merged downloads; never resets traffic or VPN keys.
+- `app/services/bs_public_link_tokens.py` — Python-модуль
+  Классы: нет
+  Функции: `hash_public_token`, `new_public_token`, `public_subscription_base_url`, `public_subscription_url`, `public_token_from_url`, `has_combined_public_link`, `apply_panel_subscription_links` — Panel synchronization must not replace a combined URL or its cryptolink., `redact_public_subscription_path`
 - `app/services/bs_subscription_composer.py` — Python-модуль
   Классы: `UnsupportedSubscription`, `SubscriptionDocument` (2 методов), `CompositionResult`
   Функции: `forwarded_device_headers` — Never accept client authorization, host, proxy, cookie or format override headers., `contains_account_credentials` — Reject panel error remarks that happen to be valid configurations., `compose_subscriptions` — Keep the primary admission result, profile headers and whole configurations.
 - `app/services/bs_subscription_delivery.py` — Python-модуль
   Классы: `SubscriptionUnavailable`
-  Функции: `deliver_subscription` — Fetch primary first and preserve ordinary access on a secondary failure.
+  Функции: `deliver_subscription` — Fetch primary first and preserve ordinary access on a secondary failure., `deliver_public_subscription` — Authenticate an opaque capability again UNDER the shared delivery/revoke lock.
 - `app/services/bs_subscription_service.py` — Python-модуль
   Классы: нет
   Функции: `prepare_bs_account` — Persist an intent, prepare a disabled panel identity, then persist its id.
@@ -2646,6 +2655,9 @@
 - `app/webserver/apple_iap.py` — Python-модуль
   Классы: нет
   Функции: `create_apple_iap_router`
+- `app/webserver/bs_subscription.py` — Python-модуль
+  Классы: нет
+  Функции: `create_public_subscription_router`
 - `app/webserver/dpichecker_webhook.py` — Python-модуль
   Классы: нет
   Функции: `create_dpichecker_webhook_router`
@@ -3119,6 +3131,9 @@
   Классы: нет
   Функции: `upgrade`, `downgrade`
 - `migrations/alembic/versions/0132_bs_traffic_foundation.py` — Python-модуль
+  Классы: нет
+  Функции: `upgrade`, `downgrade`
+- `migrations/alembic/versions/0133_bs_public_links.py` — Python-модуль
   Классы: нет
   Функции: `upgrade`, `downgrade`
 
@@ -3789,13 +3804,19 @@
 
 - `tests/database/crud/`
 - `tests/database/test_bs_account_preparation_postgres.py` — Python-модуль
-  Классы: `FakePanel` (6 методов)
+  Классы: `FakePanel` (8 методов)
   Функции: `single_period_tariffs`, `test_preparation_is_repeatable_and_never_changes_primary`, `test_lost_create_response_recovers_persisted_intent_without_duplicate`, `test_inbound_overlap_blocks_writes_and_intent_creation`, `test_trial_and_disabled_tariff_do_not_get_secondary`, `test_conflicting_username_is_never_adopted_or_modified`, `test_primary_id_collision_blocks_write_even_with_matching_marker`, `test_bs_account_is_in_backup_after_parent_subscription`, `test_secondary_cannot_be_written_or_adopted_as_primary`, `test_secondary_reservation_beats_corrupt_stored_primary_pointer`, `test_preparation_refuses_enabled_candidate_without_disabling_it`, `test_preparation_keeps_personal_bs_limit`, `test_concurrent_preparation_keeps_one_persisted_identity`, `test_preflight_error_releases_primary_lock`, `test_unconfirmed_panel_quota_leaves_a_retryable_intent`
+- `tests/database/test_bs_public_link_migration_postgres.py` — Python-модуль
+  Классы: нет
+  Функции: `test_public_link_revision_roundtrip_preserves_existing_data`
+- `tests/database/test_bs_public_links_postgres.py` — Python-модуль
+  Классы: нет
+  Функции: `configured_public_delivery`, `test_preparation_only_creates_a_disabled_hashed_candidate`, `test_active_capability_fetches_the_pair_and_can_be_disabled`, `test_invalid_binding_or_access_never_fetches_panel_credentials`, `test_only_the_opaque_token_is_a_public_credential`, `test_paired_revoke_changes_both_keys_and_public_url_without_touching_payment_or_quota`, `test_partial_or_lost_revoke_stays_closed_and_recovers_the_same_intent`, `test_public_link_is_in_backup_and_removed_with_its_parent`, `public_client`, `test_actual_http_route_serves_both_accounts_with_private_headers`, `test_http_failures_do_not_echo_the_secret_or_redirect_to_raw_panel_links`, `test_public_capability_is_rechecked_after_waiting_for_the_mutation_lock`, `test_revoke_entry_used_by_bot_and_cabinet_dispatches_the_pair_and_refreshes_url`, `test_unapproved_pair_state_cannot_start_key_rotation`, `test_happ_mode_encrypts_only_the_new_combined_link`, `test_capability_authentication_precedes_even_api_client_initialization`
 - `tests/database/test_bs_shared_devices_postgres.py` — Python-модуль
   Классы: нет
   Функции: `test_stale_secondary_is_pruned_before_its_atomic_public_admission`, `test_primary_actual_device_limit_is_mirrored_without_changing_other_fields`, `test_unconfirmed_primary_or_cleanup_never_issues_bs`, `test_explicit_unlimited_supports_clients_without_hwid`, `test_secondary_public_gate_is_not_bypassed_when_it_refuses_a_device`, `test_device_mutations_affect_both_accounts_secondary_first`, `test_secondary_failure_preserves_primary_registration`, `test_reset_cleans_stale_secondary_even_when_primary_is_empty`, `test_partial_delete_can_be_retried_without_claiming_success`, `test_foreign_secondary_cannot_be_reset`, `test_dirty_caller_is_neither_committed_nor_autoflushed_by_device_mutation`, `test_concurrent_new_devices_cannot_double_the_primary_slot_count`, `test_reset_waits_for_inflight_delivery_and_finishes_with_empty_registries`, `test_cancelled_lock_holder_releases_lock_and_other_subscriptions_do_not_block`, `test_split_operations_require_a_real_independent_database_session`, `test_legacy_context_cannot_skip_persisted_secondary`, `test_unconfirmed_limit_update_preserves_ordinary_and_recovers_on_retry`, `test_unregistered_secondary_appearing_during_fetch_is_not_delivered`, `test_empty_primary_ui_reset_still_cleans_secondary_and_reports_failure`, `test_busy_one_connection_caller_pool_cannot_deadlock_device_guard`, `test_uncommitted_new_shared_subscription_keeps_legacy_reset_without_commit`
 - `tests/database/test_bs_subscription_delivery_postgres.py` — Python-модуль
-  Классы: `FakePanel` (8 методов)
+  Классы: `FakePanel` (9 методов)
   Функции: `seed`, `test_active_split_delivers_both_without_changing_database`, `test_primary_hwid_refusal_never_contacts_bs`, `test_inactive_panel_identity_cannot_add_bs`, `test_trial_shared_and_unprepared_subscriptions_fetch_primary_only`, `test_local_denial_makes_no_panel_request`, `test_wrong_primary_panel_identity_never_receives_hwid`, `test_wrong_secondary_panel_identity_never_receives_hwid`, `test_secondary_reserved_as_another_primary_cannot_be_delivered`, `test_secondary_failure_preserves_ordinary_access`, `test_cancellation_is_propagated`, `test_http_200_error_remark_without_denial_header_cannot_add_bs`, `test_primary_reserved_as_bs_fails_before_panel_access`, `test_dirty_caller_transaction_cannot_be_autoflushed_by_delivery`, `test_missing_secondary_short_uuid_keeps_ordinary_access`
 - `tests/database/test_bs_traffic_migration_postgres.py` — Python-модуль
   Классы: нет
@@ -3920,9 +3941,12 @@
 - `tests/external/test_apple_iap.py` — Python-модуль
   Классы: `TestAppleDependency` (1 методов), `TestSettings` (8 методов), `TestTransactionValidation` (3 методов), `TestAdapter` (2 методов), `TestSchemas` (4 методов), `TestTimestampParsing` (2 методов), `TestCabinetAppleIAPRoutes` (8 методов), `TestFulfillmentService` (6 методов), `TestAdapterFallback` (1 методов), `TestNotificationService` (7 методов), `TestAppleIAPRouting` (3 методов)
   Функции: `anyio_backend`
+- `tests/external/test_bs_identity_no_cryptolink.py` — Python-модуль
+  Классы: нет
+  Функции: `test_technical_identity_operations_never_generate_a_direct_happ_link`, `test_legacy_primary_read_keeps_its_existing_enrichment`
 - `tests/external/test_bs_public_subscription_transport.py` — Python-модуль
   Классы: нет
-  Функции: `panel_server`, `test_public_fetch_preserves_hwid_refusal_body_headers_and_http_status`, `test_redirect_is_not_followed_with_panel_credentials`, `test_chunked_response_without_content_length_is_still_bounded`, `test_invalid_utf8_is_not_replaced_with_damaged_credentials`, `test_invalid_short_uuid_never_makes_a_request`
+  Функции: `panel_server`, `test_public_fetch_preserves_hwid_refusal_body_headers_and_http_status`, `test_redirect_is_not_followed_with_panel_credentials`, `test_chunked_response_without_content_length_is_still_bounded`, `test_invalid_utf8_is_not_replaced_with_damaged_credentials`, `test_invalid_short_uuid_never_makes_a_request`, `test_client_type_is_forwarded_as_a_validated_path_segment`, `test_client_type_cannot_inject_a_path_or_query`
 - `tests/external/test_bschek_api.py` — Python-модуль
   Классы: нет
   Функции: `test_error_envelope_is_mapped`, `test_no_dpi_on_carries_skipped_units_in_details`, `test_rate_limited_exposes_retry_after`, `test_validation_422_keeps_fields`, `test_cloudflare_524_without_body_is_gateway_error`, `test_html_502_is_gateway_error`, `test_success_body_is_returned_as_is`, `test_no_dpi_on_race_with_200_is_not_an_error`, `test_every_recorded_error_fixture_parses_to_a_code` — Сторож: новый записанный ответ с конвертом ошибки обязан разбираться., `test_operators_params_join_lists_and_keep_cyrillic`, `test_get_openapi_reads_spec_from_api_root`, `test_account_hides_webhook_secret`, `test_methods_hit_expected_paths`, `test_api_key_never_appears_in_repr`
@@ -3971,6 +3995,9 @@
 - `tests/fixtures/__init__.py` — Python-модуль
   Классы: нет
   Функции: нет
+- `tests/fixtures/bs_public_subscription.py` — Python-модуль
+  Классы: `PublicPanel` (4 методов)
+  Функции: `seed_public`
 - `tests/fixtures/bschek/`
 - `tests/fixtures/bschek_fixtures.py` — Python-модуль
   Классы: нет
@@ -4479,6 +4506,9 @@
 - `tests/services/test_bs_device_policy.py` — Python-модуль
   Классы: нет
   Функции: `test_malformed_device_registry_is_rejected`, `test_empty_and_complete_registry_are_accepted`, `test_shared_and_trial_operations_keep_single_account_behavior`
+- `tests/services/test_bs_public_link_tokens.py` — Python-модуль
+  Классы: нет
+  Функции: `test_invalid_capability_is_not_an_identifier`, `test_generated_capabilities_are_random_and_only_their_digests_are_lookup_keys`, `test_public_origin_must_be_explicit_and_valid`, `test_public_secret_path_is_redacted_even_if_no_route_matches`, `test_panel_updates_preserve_only_the_combined_url_and_its_cryptolink`, `test_panel_projection_can_update_identity_without_replacing_combined_link`, `test_regular_panel_push_does_not_publish_a_direct_primary_url`
 - `tests/services/test_bs_subscription_composer.py` — Python-модуль
   Классы: нет
   Функции: `document`, `profile`, `clash`, `test_uri_and_base64_preserve_keys_and_primary_encoding`, `test_duplicate_identical_links_are_not_repeated`, `test_xray_full_profiles_keep_private_keys_and_internal_tags`, `test_clash_groups_and_colliding_names_are_rewritten_without_touching_keys`, `test_clash_generated_suffix_cannot_collide_with_existing_secondary_name`, `test_primary_http_200_hwid_refusal_is_preserved_even_with_valid_config`, `test_non_200_from_either_account_cannot_append_bs`, `test_secondary_hwid_denial_does_not_remove_ordinary_access_or_leak_its_headers`, `test_unsupported_or_empty_documents_preserve_primary`, `test_different_valid_formats_cannot_be_appended`, `test_oversized_and_oversized_combined_documents_preserve_primary`, `test_incompatible_clash_templates_keep_ordinary_document`, `test_headers_preserve_primary_quota_but_strip_cache_identifiers_and_private_data`, `test_only_device_metadata_is_forwarded_to_panel`, `test_account_credential_proof_supports_real_panel_formats`, `test_valid_looking_error_remarks_do_not_prove_account_access`, `test_accounts_without_credentials_cannot_prove_a_real_config`, `test_dynamic_clash_selectors_are_preserved_without_merging`
@@ -5371,6 +5401,9 @@
 - `tests/webserver/test_apple_iap_webhook.py` — Python-модуль
   Классы: нет
   Функции: `test_apple_iap_webhook_rejects_unsupported_media_type`, `test_apple_iap_webhook_rejects_body_larger_than_256kb`, `test_apple_iap_webhook_maps_invalid_signature_to_403`, `test_apple_iap_webhook_maps_configuration_error_to_503`, `test_apple_iap_webhook_returns_ok_for_processed_notification`
+- `tests/webserver/test_bs_subscription_router.py` — Python-модуль
+  Классы: нет
+  Функции: `test_public_router_is_absent_by_default`, `test_explicitly_enabled_router_requires_valid_origin`, `test_public_routes_are_independent_of_admin_api_mode`, `test_logging_and_action_context_redact_public_tokens_and_upstream_exception_messages`
 - `tests/webserver/test_cashera_webhook.py` — Python-модуль
   Классы: `DummyBot`
   Функции: `test_foreign_credentials_get_401_and_are_not_processed`, `test_processed_event_gets_200`, `test_retryable_failure_gets_500`, `test_route_is_not_registered_without_credentials`

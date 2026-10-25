@@ -17,6 +17,7 @@ from app.external.remnawave_api import (
     RemnaWaveUser,
     is_user_not_found_error,
 )
+from app.services.bs_public_link_tokens import apply_panel_subscription_links
 
 # Правила поля стратегии живут в пакете синхронизации; имя оставлено здесь для
 # внешнего кода, который импортировал его из сервиса.
@@ -234,8 +235,9 @@ class SubscriptionService:
                         tag=user_tag,
                     )
                     subscription.remnawave_short_uuid = updated_user.short_uuid
-                    subscription.subscription_url = updated_user.subscription_url
-                    subscription.subscription_crypto_link = updated_user.happ_crypto_link
+                    apply_panel_subscription_links(
+                        subscription, updated_user.subscription_url, updated_user.happ_crypto_link
+                    )
                     await db.commit()
                     return updated_user
 
@@ -265,8 +267,9 @@ class SubscriptionService:
                     )
 
                 subscription.remnawave_short_uuid = updated_user.short_uuid
-                subscription.subscription_url = updated_user.subscription_url
-                subscription.subscription_crypto_link = updated_user.happ_crypto_link
+                apply_panel_subscription_links(
+                    subscription, updated_user.subscription_url, updated_user.happ_crypto_link
+                )
                 if await self._panel_id_is_free_for(db, subscription, updated_user.id):
                     subscription.remnawave_id = updated_user.id
                 else:
@@ -570,8 +573,9 @@ class SubscriptionService:
                         hwid_device_limit=resolve_hwid_device_limit_for_payload(subscription),
                         tag=self._resolve_user_tag(subscription),
                     )
-                subscription.subscription_url = updated_user.subscription_url
-                subscription.subscription_crypto_link = updated_user.happ_crypto_link
+                apply_panel_subscription_links(
+                    subscription, updated_user.subscription_url, updated_user.happ_crypto_link
+                )
                 await db.commit()
                 return updated_user
 
@@ -692,8 +696,9 @@ class SubscriptionService:
                             reset_reason,
                         )
 
-                subscription.subscription_url = updated_user.subscription_url
-                subscription.subscription_crypto_link = updated_user.happ_crypto_link
+                apply_panel_subscription_links(
+                    subscription, updated_user.subscription_url, updated_user.happ_crypto_link
+                )
                 await link_subscription_panel_identity(db, subscription, remnawave_id)
                 await db.commit()
 
@@ -898,6 +903,23 @@ class SubscriptionService:
             return None
 
     async def revoke_subscription(self, db: AsyncSession, subscription: Subscription) -> str | None:
+        from app.services.bs_device_policy import is_split_subscription
+
+        if is_split_subscription(subscription):
+            from app.services.bs_public_link_revoke import revoke_split_public_link
+
+            try:
+                async with self.get_api_client() as api:
+                    url = await revoke_split_public_link(db, api, subscription.id)
+                await db.refresh(subscription)
+                return url
+            except Exception as error:
+                logger.error(
+                    'Split subscription reissue failed',
+                    subscription_id=subscription.id,
+                    error_type=type(error).__name__,
+                )
+                return None
         try:
             user = await get_user_by_id(db, subscription.user_id)
             if not user:
@@ -920,8 +942,9 @@ class SubscriptionService:
                 updated_user = await api.revoke_user_subscription(revoke_id)
 
                 subscription.remnawave_short_uuid = updated_user.short_uuid
-                subscription.subscription_url = updated_user.subscription_url
-                subscription.subscription_crypto_link = updated_user.happ_crypto_link
+                apply_panel_subscription_links(
+                    subscription, updated_user.subscription_url, updated_user.happ_crypto_link
+                )
                 await db.commit()
 
                 logger.info('✅ Обновлена ссылка подписки', _format_user_log=self._format_user_log(user))
@@ -1390,8 +1413,9 @@ class SubscriptionService:
                         )
 
                         # Сохраняем в памяти — commit будет после gather
-                        sub.subscription_url = updated_user.subscription_url
-                        sub.subscription_crypto_link = updated_user.happ_crypto_link
+                        apply_panel_subscription_links(
+                            sub, updated_user.subscription_url, updated_user.happ_crypto_link
+                        )
                         return True
 
                     except Exception as e:

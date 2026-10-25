@@ -86,10 +86,13 @@ class FakePanel:
             self.devices[panel_id].clear()
         return True
 
-    async def update_user(self, *, user_id, hwid_device_limit):
+    async def update_user(self, *, user_id, hwid_device_limit, enrich_happ=True):
         self.updates.append({'user_id': user_id, 'hwid_device_limit': hwid_device_limit})
         self.users[user_id].hwid_device_limit = hwid_device_limit
         return self.users[user_id]
+
+    async def get_user_identity(self, panel_id):
+        return await self.get_user_by_id(panel_id)
 
     async def get_user_by_id(self, panel_id):
         self.read_ids.append(panel_id)

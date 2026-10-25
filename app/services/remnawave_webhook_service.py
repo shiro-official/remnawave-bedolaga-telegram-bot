@@ -1637,14 +1637,23 @@ class RemnaWaveWebhookService:
         new_crypto_link = data.get('subscriptionCryptoLink') or (data.get('happ') or {}).get('cryptoLink', '')
         changed = False
 
-        if new_url and self._is_valid_url(new_url) and subscription.subscription_url != new_url:
+        from app.services.bs_public_link_tokens import has_combined_public_link
+
+        keep_public_link = has_combined_public_link(subscription)
+
+        if (
+            not keep_public_link
+            and new_url
+            and self._is_valid_url(new_url)
+            and subscription.subscription_url != new_url
+        ):
             subscription.subscription_url = new_url
             changed = True
-        if new_crypto_link and self._is_valid_link(new_crypto_link):
+        if not keep_public_link and new_crypto_link and self._is_valid_link(new_crypto_link):
             if subscription.subscription_crypto_link != new_crypto_link:
                 subscription.subscription_crypto_link = new_crypto_link
                 changed = True
-        elif new_url and subscription.subscription_crypto_link:
+        elif not keep_public_link and new_url and subscription.subscription_crypto_link:
             subscription.subscription_crypto_link = None
             changed = True
 

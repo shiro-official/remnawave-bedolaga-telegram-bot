@@ -45,6 +45,12 @@ class FakePanel:
         inbound = ORDINARY if self.overlap else squad_id
         return SimpleNamespace(inbounds=[SimpleNamespace(uuid=inbound)])
 
+    async def get_user_identity(self, panel_id):
+        return await self.get_user_by_id(panel_id)
+
+    async def get_user_identity_by_username(self, username):
+        return await self.get_user_by_username(username)
+
     async def get_user_by_id(self, panel_id):
         if self.read_error:
             raise TimeoutError('panel unavailable')
@@ -55,7 +61,7 @@ class FakePanel:
             raise TimeoutError('panel unavailable')
         return next((u for u in self.users.values() if u.username == username), None)
 
-    async def create_user(self, **data):
+    async def create_user(self, *, enrich_happ=True, **data):
         assert not any(u.username == data['username'] for u in self.users.values())
         self.created.append(data)
         result = SimpleNamespace(
@@ -71,7 +77,7 @@ class FakePanel:
             raise TimeoutError('response lost after successful create')
         return result
 
-    async def update_user(self, **data):
+    async def update_user(self, *, enrich_happ=True, **data):
         self.updated.append(data)
         user = self.users[data['user_id']]
         if self.ignore_update:

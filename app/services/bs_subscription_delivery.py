@@ -14,16 +14,18 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.config import settings
-from app.database.models import Subscription, SubscriptionBsAccount
+from app.database.models import Subscription, SubscriptionBsAccount, SubscriptionPublicLink
 from app.external.remnawave_api import RemnaWaveAPIError, UserStatus
 from app.services.bs_account_identity import verify_bs_identity
 from app.services.bs_device_policy import (
     BsDevicePolicyError,
     bs_device_lock,
+    bs_device_session,
     confirm_secondary_devices,
     is_split_subscription,
     prepare_secondary_devices,
 )
+from app.services.bs_public_link_tokens import CLIENT_TYPES, hash_public_token
 from app.services.bs_subscription_composer import (
     CompositionResult,
     SubscriptionDocument,
@@ -74,7 +76,58 @@ async def deliver_subscription(db, api, subscription_id: int, *, request_headers
     return await _deliver_subscription(db, api, subscription, request_headers)
 
 
-async def _deliver_subscription(db, api, subscription, request_headers) -> CompositionResult:
+async def deliver_public_subscription(
+    db, api, token: str, *, request_headers: dict[str, str], client_type=None, api_factory=None
+):
+    """Authenticate an opaque capability again UNDER the shared delivery/revoke lock."""
+    digest = hash_public_token(token)
+    if digest is None or (client_type is not None and client_type not in CLIENT_TYPES):
+        raise SubscriptionUnavailable('Subscription is unavailable')
+    if db.new or db.dirty or db.deleted:
+        raise SubscriptionUnavailable('Delivery requires a clean unit of work')
+    async with bs_device_session(db) as lookup_db:
+        subscription_id = await lookup_db.scalar(
+            select(SubscriptionPublicLink.subscription_id).where(
+                SubscriptionPublicLink.token_hash == digest, SubscriptionPublicLink.enabled.is_(True)
+            )
+        )
+    if subscription_id is None:
+        raise SubscriptionUnavailable('Subscription is unavailable')
+    async with bs_device_lock(db, subscription_id) as locked_db:
+        link = await locked_db.scalar(
+            select(SubscriptionPublicLink).where(SubscriptionPublicLink.subscription_id == subscription_id)
+        )
+        subscription = await locked_db.scalar(
+            select(Subscription).where(Subscription.id == subscription_id).options(selectinload(Subscription.user))
+        )
+        account = await locked_db.scalar(
+            select(SubscriptionBsAccount).where(SubscriptionBsAccount.subscription_id == subscription_id)
+        )
+        if (
+            link is None
+            or not link.enabled
+            or link.rotation_pending
+            or link.token_hash != digest
+            or subscription is None
+            or not is_split_subscription(subscription)
+            or account is None
+            or account.migration_state != 'active'
+            or subscription.remnawave_id != link.primary_id
+            or subscription.remnawave_short_uuid != link.primary_short_uuid
+            or account.remnawave_id != link.secondary_id
+            or account.remnawave_short_uuid != link.secondary_short_uuid
+        ):
+            raise SubscriptionUnavailable('Subscription is unavailable')
+        _require_local_subscription(subscription)
+        if api_factory is not None:
+            async with api_factory() as client:
+                return await _deliver_subscription(
+                    locked_db, client, subscription, request_headers, client_type=client_type
+                )
+        return await _deliver_subscription(locked_db, api, subscription, request_headers, client_type=client_type)
+
+
+def _require_local_subscription(subscription) -> None:
     if (
         subscription is None
         or subscription.user is None
@@ -83,6 +136,14 @@ async def _deliver_subscription(db, api, subscription, request_headers) -> Compo
         or not _future(subscription.end_date)
         or not subscription.remnawave_id
         or not subscription.remnawave_short_uuid
+    ):
+        raise SubscriptionUnavailable('Subscription is unavailable')
+
+
+async def _deliver_subscription(db, api, subscription, request_headers, *, client_type=None) -> CompositionResult:
+    _require_local_subscription(subscription)
+    if is_split_subscription(subscription) and await db.scalar(
+        select(SubscriptionPublicLink.rotation_pending).where(SubscriptionPublicLink.subscription_id == subscription.id)
     ):
         raise SubscriptionUnavailable('Subscription is unavailable')
     foreign = await find_foreign_panel_owner(
@@ -96,7 +157,7 @@ async def _deliver_subscription(db, api, subscription, request_headers) -> Compo
         raise SubscriptionUnavailable('Primary identity is unavailable')
     # Do not follow email/Telegram fallbacks: only these recorded identities may
     # receive client HWID data or provide credentials for this subscription.
-    primary_user = await api.get_user_by_id(subscription.remnawave_id)
+    primary_user = await api.get_user_identity(subscription.remnawave_id)
     if (
         primary_user is None
         or primary_user.id != subscription.remnawave_id
@@ -104,8 +165,9 @@ async def _deliver_subscription(db, api, subscription, request_headers) -> Compo
     ):
         raise SubscriptionUnavailable('Primary identity is unavailable')
     headers = forwarded_device_headers(request_headers)
+    format_kwargs = {'client_type': client_type} if client_type is not None else {}
     status, body, response_headers = await api.get_public_subscription_response(
-        primary_user.short_uuid, headers=headers
+        primary_user.short_uuid, headers=headers, **format_kwargs
     )
     primary = SubscriptionDocument(body, response_headers, status)
 
@@ -138,7 +200,7 @@ async def _deliver_subscription(db, api, subscription, request_headers) -> Compo
             return ordinary('secondary_inactive')
         limit = await prepare_secondary_devices(api, primary_user, secondary_user, account, primary, headers)
         status, body, response_headers = await api.get_public_subscription_response(
-            secondary_user.short_uuid, headers=headers
+            secondary_user.short_uuid, headers=headers, **format_kwargs
         )
     except BsAccountIdentityError:
         return ordinary('secondary_identity_mismatch')

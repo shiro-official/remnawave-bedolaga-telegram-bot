@@ -735,6 +735,8 @@ class RemnaWaveAPI:
         tag: str | None = None,
         active_internal_squads: list[str] | None = None,
         external_squad_uuid: str | None = None,
+        *,
+        enrich_happ: bool = True,
     ) -> RemnaWaveUser:
         data = {
             'username': username,
@@ -787,14 +789,21 @@ class RemnaWaveAPI:
             panel_user_id=user.id,
             response_hwidDeviceLimit=user.hwid_device_limit,
         )
-        return await self.enrich_user_with_happ_link(user)
+        return await self.enrich_user_with_happ_link(user) if enrich_happ else user
 
-    async def get_user_by_id(self, user_id: int) -> RemnaWaveUser | None:
+    async def get_user_identity(self, user_id: int) -> RemnaWaveUser | None:
+        """Identity-only read: never create/export a direct technical-account cryptolink."""
+        return await self.get_user_by_id(user_id, enrich_happ=False)
+
+    async def get_user_identity_by_username(self, username: str) -> RemnaWaveUser | None:
+        return await self.get_user_by_username(username, enrich_happ=False)
+
+    async def get_user_by_id(self, user_id: int, *, enrich_happ: bool = True) -> RemnaWaveUser | None:
         panel_user_id = coerce_panel_user_id(user_id)
         try:
             response = await self._make_request('GET', f'/api/users/{panel_user_id}')
             user = self._parse_user(response['response'])
-            return await self.enrich_user_with_happ_link(user)
+            return await self.enrich_user_with_happ_link(user) if enrich_happ else user
         except RemnaWaveAPIError as e:
             if e.status_code == 404:
                 return None
@@ -816,11 +825,11 @@ class RemnaWaveAPI:
                 return None
             raise
 
-    async def get_user_by_username(self, username: str) -> RemnaWaveUser | None:
+    async def get_user_by_username(self, username: str, *, enrich_happ: bool = True) -> RemnaWaveUser | None:
         try:
             response = await self._make_request('GET', f'/api/users/by-username/{username}')
             user = self._parse_user(response['response'])
-            return await self.enrich_user_with_happ_link(user)
+            return await self.enrich_user_with_happ_link(user) if enrich_happ else user
         except RemnaWaveAPIError as e:
             if e.status_code == 404:
                 return None
@@ -951,6 +960,8 @@ class RemnaWaveAPI:
         tag: str | type(...) | None = ...,
         active_internal_squads: list[str] | None = None,
         external_squad_uuid: str | type(...) | None = ...,
+        *,
+        enrich_happ: bool = True,
     ) -> RemnaWaveUser:
         # 3.0.0: UpdateUserCommand.RequestBodySchema не имеет поля `uuid`, а
         # .refine((d) => d.username ?? d.id) требует хотя бы один из двух —
@@ -1011,7 +1022,7 @@ class RemnaWaveAPI:
             panel_user_id=panel_user_id,
             response_hwidDeviceLimit=user.hwid_device_limit,
         )
-        return await self.enrich_user_with_happ_link(user)
+        return await self.enrich_user_with_happ_link(user) if enrich_happ else user
 
     async def delete_user(self, user_id: int) -> bool:
         # 3.0.0: DELETE отвечает 204 (синхронно) либо 202 (в очередь) — тела нет,
@@ -1053,7 +1064,12 @@ class RemnaWaveAPI:
         return await self.enrich_user_with_happ_link(user)
 
     async def revoke_user_subscription(
-        self, user_id: int, new_short_uuid: str | None = None, revoke_only_passwords: bool = False
+        self,
+        user_id: int,
+        new_short_uuid: str | None = None,
+        revoke_only_passwords: bool = False,
+        *,
+        enrich_happ: bool = True,
     ) -> RemnaWaveUser:
         """
         Отзывает подписку пользователя (меняет ссылку/пароли).
@@ -1072,7 +1088,7 @@ class RemnaWaveAPI:
 
         response = await self._make_request('POST', f'/api/users/{panel_user_id}/actions/revoke', data)
         user = self._parse_user(response['response'])
-        return await self.enrich_user_with_happ_link(user)
+        return await self.enrich_user_with_happ_link(user) if enrich_happ else user
 
     async def get_user_accessible_nodes(self, user_id: int) -> list[RemnaWaveAccessibleNode]:
         """Получает список доступных нод для пользователя"""
@@ -1455,7 +1471,7 @@ class RemnaWaveAPI:
             return await response.text(), {key.lower(): value for key, value in response.headers.items()}
 
     async def get_public_subscription_response(
-        self, short_uuid: str, *, headers: dict[str, str] | None = None
+        self, short_uuid: str, *, headers: dict[str, str] | None = None, client_type: str | None = None
     ) -> tuple[int, str, dict[str, str]]:
         """Bounded public document for composition, including HTTP admission status.
 
@@ -1467,9 +1483,12 @@ class RemnaWaveAPI:
             raise RemnaWaveAPIError('Session not initialized. Use async context manager.')
         if not re.fullmatch(r'[A-Za-z0-9_-]{6,64}', short_uuid):
             raise RemnaWaveAPIError('Invalid public subscription identifier')
+        if client_type is not None and client_type not in ('json', 'v2ray-json', 'clash', 'mihomo', 'stash', 'singbox'):
+            raise RemnaWaveAPIError('Invalid public subscription client type')
+        suffix = f'/{client_type}' if client_type is not None else ''
         limit = 4 * 1024 * 1024
         async with self.session.get(
-            f'{self.base_url}/api/sub/{short_uuid}', headers=headers, allow_redirects=False
+            f'{self.base_url}/api/sub/{short_uuid}{suffix}', headers=headers, allow_redirects=False
         ) as response:
             if 300 <= response.status < 400:
                 raise RemnaWaveAPIError('Public subscription redirect refused')

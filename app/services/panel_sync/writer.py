@@ -24,6 +24,7 @@ from app.external.remnawave_api import (
     is_expire_in_past_error,
     is_user_not_found_error,
 )
+from app.services.bs_public_link_tokens import apply_panel_subscription_links
 from app.services.panel_sync.expiry import SKEW_RETRY_MARGIN, stale_panel_expire_at
 from app.services.panel_sync.identity import (
     PanelIdentity,
@@ -54,10 +55,10 @@ async def sync_bs_device_limit(api, *, account, primary, secondary, limit: int) 
 
     if type(limit) is not int or limit < 0 or limit != primary.hwid_device_limit or not owned(secondary):
         raise BsAccountIdentityError('Cannot mirror an unconfirmed primary device limit')
-    current = await api.get_user_by_id(secondary.id)
+    current = await api.get_user_identity(secondary.id)
     if not owned(current):
         raise BsAccountIdentityError('Secondary identity changed before device limit update')
-    result = await api.update_user(user_id=current.id, hwid_device_limit=limit)
+    result = await api.update_user(user_id=current.id, hwid_device_limit=limit, enrich_happ=False)
     if not owned(result) or type(result.hwid_device_limit) is not int or result.hwid_device_limit != limit:
         raise BsAccountIdentityError('Secondary device limit update was not confirmed')
 
@@ -393,11 +394,14 @@ async def _record_identity(
     if short_uuid:
         subscription.remnawave_short_uuid = short_uuid
     subscription_url = getattr(panel_user, 'subscription_url', None)
-    if subscription_url:
-        subscription.subscription_url = subscription_url
     crypto_link = getattr(panel_user, 'happ_crypto_link', None)
-    if crypto_link is not None:
-        subscription.subscription_crypto_link = crypto_link
+    apply_panel_subscription_links(
+        subscription,
+        subscription_url,
+        crypto_link,
+        replace_url=bool(subscription_url),
+        replace_crypto=crypto_link is not None,
+    )
 
     # Одиночный режим адресует панель через человека. В мультитарифе аккаунты у
     # подписок, но первый из них записываем и человеку: иначе после возврата
@@ -437,9 +441,9 @@ async def prepare_bs_panel_account(
 
     if payload.status is not UserStatus.DISABLED or payload.description != ownership_marker:
         raise BsAccountIdentityError('Preparation can only write the disabled BS identity')
-    candidate = await api.get_user_by_id(known_id) if known_id is not None else None
+    candidate = await api.get_user_identity(known_id) if known_id is not None else None
     if candidate is None:
-        candidate = await api.get_user_by_username(payload.username)
+        candidate = await api.get_user_identity_by_username(payload.username)
     if candidate is not None:
         if candidate.username != payload.username or candidate.description != ownership_marker:
             raise BsAccountIdentityError('The candidate panel account is not this BS identity')
@@ -447,10 +451,10 @@ async def prepare_bs_panel_account(
         if getattr(candidate.status, 'value', candidate.status) != UserStatus.DISABLED.value:
             raise BsAccountIdentityError('Refusing to prepare an already enabled panel account')
         panel_user = await api.update_user(
-            **payload.update_kwargs(user_id=candidate.id, panel_current=candidate.expire_at)
+            **payload.update_kwargs(user_id=candidate.id, panel_current=candidate.expire_at), enrich_happ=False
         )
     else:
-        panel_user = await api.create_user(**payload.create_kwargs())
+        panel_user = await api.create_user(**payload.create_kwargs(), enrich_happ=False)
     if (
         panel_user.username != payload.username
         or panel_user.description != ownership_marker

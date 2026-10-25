@@ -531,6 +531,13 @@ class Settings(BaseSettings):
     SUBSCRIPTION_REVOKE_ENABLED: bool = True
     SUBSCRIPTION_REVOKE_COOLDOWN_SECONDS: int = 900  # 15 minutes
 
+    # Staged BS delivery: enabling the router never migrates existing accounts.
+    BS_SUBSCRIPTION_DELIVERY_ENABLED: bool = False
+    BS_SUBSCRIPTION_PUBLIC_BASE_URL: str = ''
+    BS_SUBSCRIPTION_IP_RATE_LIMIT: int = Field(default=120, ge=1, le=100000)
+    BS_SUBSCRIPTION_TOKEN_RATE_LIMIT: int = Field(default=60, ge=1, le=100000)
+    BS_SUBSCRIPTION_MAX_CONCURRENT: int = Field(default=8, ge=1, le=64)
+
     # Настройки простой покупки
     SIMPLE_SUBSCRIPTION_ENABLED: bool = False
     SIMPLE_SUBSCRIPTION_PERIOD_DAYS: int = 30

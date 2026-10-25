@@ -374,10 +374,17 @@ def project_onto_subscription(
     if snapshot.short_uuid and subscription.remnawave_short_uuid != snapshot.short_uuid:
         subscription.remnawave_short_uuid = snapshot.short_uuid
         changed.add('remnawave_short_uuid')
-    if snapshot.subscription_url and subscription.subscription_url != snapshot.subscription_url:
+    from app.services.bs_public_link_tokens import has_combined_public_link
+
+    keep_public_link = has_combined_public_link(subscription)
+    if (
+        not keep_public_link
+        and snapshot.subscription_url
+        and subscription.subscription_url != snapshot.subscription_url
+    ):
         subscription.subscription_url = snapshot.subscription_url
         changed.add('subscription_url')
-    if snapshot.crypto_link and subscription.subscription_crypto_link != snapshot.crypto_link:
+    if not keep_public_link and snapshot.crypto_link and subscription.subscription_crypto_link != snapshot.crypto_link:
         subscription.subscription_crypto_link = snapshot.crypto_link
         changed.add('subscription_crypto_link')
 

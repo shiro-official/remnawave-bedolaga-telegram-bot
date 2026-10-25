@@ -96,6 +96,9 @@ def _create_base_app(lifespan: Any = None) -> FastAPI:
                 app.include_router(apple_iap_only_router)
 
     _attach_docs_alias(app, app.docs_url)
+    from app.webserver.bs_subscription import create_public_subscription_router
+
+    app.include_router(create_public_subscription_router())
     return app
 
 
