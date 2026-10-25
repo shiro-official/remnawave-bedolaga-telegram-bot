@@ -40,6 +40,12 @@ async def memory_session(monkeypatch, tables: Sequence[Table]) -> AsyncIterator[
     """Сессия к :memory: БД, где созданы только переданные таблицы."""
     ensure_real_aiosqlite(monkeypatch)
     engine = create_async_engine('sqlite+aiosqlite:///:memory:')
+    # Primary identity lookups must also consult the secondary reservation
+    # registry. Keep that real schema dependency in subset-based tests.
+    tables = list(tables)
+    bs_accounts = Base.metadata.tables['subscription_bs_accounts']
+    if Base.metadata.tables['subscriptions'] in tables and bs_accounts not in tables:
+        tables.append(bs_accounts)
     async with engine.begin() as conn:
         await conn.run_sync(lambda c: Base.metadata.create_all(c, tables=list(tables)))
     # autoflush=False повторяет прод (app/database/database.py): иначе тест

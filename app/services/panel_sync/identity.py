@@ -34,7 +34,7 @@ from dataclasses import dataclass
 import structlog
 from sqlalchemy import or_, select
 
-from app.database.models import Subscription, User, UserStatus
+from app.database.models import Subscription, SubscriptionBsAccount, User, UserStatus
 from app.external.remnawave_api import RemnaWaveUser
 
 
@@ -48,6 +48,7 @@ class PanelOwner:
     user_id: int
     #: ``None`` — аккаунт закреплён только за пользователем (старые строки одиночного режима).
     subscription_id: int | None = None
+    account_role: str = 'primary'
 
 
 class PanelAccountOwnedByAnotherUser(Exception):
@@ -63,9 +64,10 @@ class PanelAccountOwnedByAnotherUser(Exception):
         self.panel_user_id = panel_user_id
         self.owner_user_id = owner.user_id
         self.owner_subscription_id = owner.subscription_id
+        self.owner_account_role = owner.account_role
         super().__init__(
             f'Аккаунт панели {panel_user_id} закреплён за пользователем бота {owner.user_id}'
-            f' (подписка {owner.subscription_id}), а не за подпиской {subscription_id}'
+            f' (подписка {owner.subscription_id}, роль {owner.account_role}), а не за основной учёткой подписки {subscription_id}'
         )
 
 
@@ -129,6 +131,16 @@ async def find_foreign_panel_owner(db, user, subscription, panel_id, *, multi_ta
         panel_id = int(panel_id)
     except (TypeError, ValueError):
         return None
+    bs_owner = (
+        await db.execute(
+            select(SubscriptionBsAccount.subscription_id, Subscription.user_id)
+            .join(Subscription, Subscription.id == SubscriptionBsAccount.subscription_id)
+            .where(SubscriptionBsAccount.remnawave_id == panel_id)
+            .limit(1)
+        )
+    ).first()
+    if bs_owner is not None:
+        return PanelOwner(user_id=bs_owner[1], subscription_id=bs_owner[0], account_role='bs')
     if getattr(subscription, 'remnawave_id', None) == panel_id:
         return None
 
@@ -250,9 +262,9 @@ async def resolve_panel_identity(
     for source, panel_user_id in exact_ids:
         if not panel_user_id:
             continue
-        # Свою строку не проверяем: колонка уникальна, она и есть хозяин. А вот
-        # id пользователя мог прилипнуть от прошлой записи по почте в чужой аккаунт.
-        if source != 'subscription' and await is_foreign(panel_user_id):
+        # A stored primary pointer can be wrong too: a secondary reservation
+        # takes precedence over user/subscription fallback and stale imports.
+        if await is_foreign(panel_user_id):
             continue
         if not verify_recorded_id:
             return PanelIdentity(source=source, known_id=panel_user_id)
@@ -340,6 +352,7 @@ async def panel_id_is_free_for(db, subscription, panel_id: int | None) -> bool:
                 Subscription.remnawave_id == int(panel_id),
                 Subscription.id != getattr(subscription, 'id', None),
             )
+            .union_all(select(SubscriptionBsAccount.id).where(SubscriptionBsAccount.remnawave_id == int(panel_id)))
             .limit(1)
         )
     ).scalar_one_or_none()
@@ -352,7 +365,10 @@ async def user_panel_id_is_free_for(db, user, panel_id: int | None) -> bool:
         return False
     other = (
         await db.execute(
-            select(User.id).where(User.remnawave_id == int(panel_id), User.id != getattr(user, 'id', None)).limit(1)
+            select(User.id)
+            .where(User.remnawave_id == int(panel_id), User.id != getattr(user, 'id', None))
+            .union_all(select(SubscriptionBsAccount.id).where(SubscriptionBsAccount.remnawave_id == int(panel_id)))
+            .limit(1)
         )
     ).scalar_one_or_none()
     return other is None

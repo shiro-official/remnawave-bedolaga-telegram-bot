@@ -84,7 +84,9 @@ async def test_bulk_pass_does_not_disable_an_expired_subscription(monkeypatch):
     monkeypatch.setattr(grace_runtime_mod, 'grace_sensitive_panel_update', fake_lease)
     monkeypatch.setattr(Settings, 'is_multi_tariff_enabled', lambda self: False)
 
-    stats = await push_all_subscriptions(AsyncMock(), api)
+    db = AsyncMock()
+    db.execute.return_value = SimpleNamespace(first=lambda: None, scalar_one_or_none=lambda: None)
+    stats = await push_all_subscriptions(db, api)
 
     assert stats.updated == 1
     api.update_user.assert_awaited_once()

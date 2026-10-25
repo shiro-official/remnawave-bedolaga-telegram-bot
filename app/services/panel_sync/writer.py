@@ -391,6 +391,62 @@ async def _record_identity(
     await link_subscription_panel_identity(db, subscription, panel_user_id)
 
 
+async def prepare_bs_panel_account(
+    api,
+    *,
+    payload: PanelPayload,
+    known_id: int | None,
+    ownership_marker: str,
+    check_owner,
+) -> RemnaWaveUser:
+    """Prepare only a DISABLED secondary account using exact, recoverable identity.
+
+    Never fall back to Telegram/email. The caller persists the ownership marker
+    before this operation, so retry can recover a successful create whose reply
+    was lost. Primary-account ownership is checked before every existing write.
+    """
+    from app.external.remnawave_api import UserStatus
+    from app.services.bs_traffic_policy import BsAccountIdentityError
+
+    if payload.status is not UserStatus.DISABLED or payload.description != ownership_marker:
+        raise BsAccountIdentityError('Preparation can only write the disabled BS identity')
+    candidate = await api.get_user_by_id(known_id) if known_id is not None else None
+    if candidate is None:
+        candidate = await api.get_user_by_username(payload.username)
+    if candidate is not None:
+        if candidate.username != payload.username or candidate.description != ownership_marker:
+            raise BsAccountIdentityError('The candidate panel account is not this BS identity')
+        await check_owner(candidate.id)
+        if getattr(candidate.status, 'value', candidate.status) != UserStatus.DISABLED.value:
+            raise BsAccountIdentityError('Refusing to prepare an already enabled panel account')
+        panel_user = await api.update_user(
+            **payload.update_kwargs(user_id=candidate.id, panel_current=candidate.expire_at)
+        )
+    else:
+        panel_user = await api.create_user(**payload.create_kwargs())
+    if (
+        panel_user.username != payload.username
+        or panel_user.description != ownership_marker
+        or getattr(panel_user.status, 'value', panel_user.status) != UserStatus.DISABLED.value
+    ):
+        raise BsAccountIdentityError('The panel did not confirm the prepared BS identity')
+    actual_squads = {
+        str(squad['uuid'] if isinstance(squad, dict) else getattr(squad, 'uuid', squad))
+        for squad in panel_user.active_internal_squads
+    }
+    if (
+        actual_squads != set(payload.active_internal_squads)
+        or panel_user.traffic_limit_bytes != payload.traffic_limit_bytes
+        or getattr(panel_user.traffic_limit_strategy, 'value', panel_user.traffic_limit_strategy)
+        != getattr(payload.traffic_limit_strategy, 'value', payload.traffic_limit_strategy)
+        or panel_user.telegram_id is not None
+        or panel_user.email is not None
+    ):
+        raise BsAccountIdentityError('The panel did not confirm the separate BS access and quota')
+    await check_owner(panel_user.id)
+    return panel_user
+
+
 async def patch_panel_account(
     api,
     *,

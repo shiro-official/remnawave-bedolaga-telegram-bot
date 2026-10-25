@@ -2139,6 +2139,11 @@ class Tariff(Base):
     # Если сервер не указан - используется общий traffic_limit_gb
     server_traffic_limits = Column(JSON, default=dict)
 
+    # Separate BS/WL pool; disabled tariffs and existing subscriptions keep their current behavior.
+    bs_traffic_enabled = Column(Boolean, nullable=False, default=False, server_default=text('false'))
+    bs_traffic_limit_gb = Column(Integer, nullable=False, default=0, server_default='0')
+    bs_squad_uuids = Column(JSON, nullable=False, default=list, server_default='[]')
+
     # Цены на периоды в копейках (JSON: {"14": 30000, "30": 50000, "90": 120000, ...})
     period_prices = Column(JSON, nullable=False, default=dict)
 
@@ -2649,6 +2654,8 @@ class Subscription(Base):
 
     traffic_limit_gb = Column(Integer, default=0)
     traffic_used_gb = Column(Float, default=0.0)
+    # Switched only after the secondary account, merged link and device policy are ready.
+    traffic_mode = Column(String(16), nullable=False, default='shared', server_default='shared')
     purchased_traffic_gb = Column(Integer, default=0)  # Докупленный трафик
     traffic_reset_at = Column(
         AwareDateTime(), nullable=True
@@ -2989,6 +2996,39 @@ class GraceAccessSessionModel(Base):
     last_error = Column(Text, nullable=True)
 
     subscription = relationship('Subscription', back_populates='grace_access_sessions')
+
+
+class SubscriptionBsAccount(Base):
+    """Explicit secondary panel identity; preparing it never changes the primary account."""
+
+    __tablename__ = 'subscription_bs_accounts'
+    __table_args__ = (
+        CheckConstraint('base_traffic_limit_gb > 0', name='ck_bs_account_base_limit'),
+        CheckConstraint(
+            'traffic_limit_override_gb IS NULL OR traffic_limit_override_gb > 0', name='ck_bs_account_override_limit'
+        ),
+        CheckConstraint('purchased_traffic_gb >= 0', name='ck_bs_account_purchased_traffic'),
+        CheckConstraint('traffic_used_bytes >= 0', name='ck_bs_account_used_traffic'),
+        CheckConstraint("migration_state IN ('pending', 'prepared', 'active')", name='ck_bs_account_migration_state'),
+    )
+
+    id = Column(Integer, primary_key=True)
+    subscription_id = Column(Integer, ForeignKey('subscriptions.id', ondelete='CASCADE'), nullable=False, unique=True)
+    panel_username = Column(String(36), nullable=False, unique=True)
+    # A correlation marker for recovering our own interrupted create, never VPN credentials.
+    provisioning_key = Column(String(32), nullable=False, unique=True)
+    remnawave_id = Column(BigInteger, nullable=True, unique=True)
+    remnawave_short_uuid = Column(String(255), nullable=True, unique=True)
+    base_traffic_limit_gb = Column(Integer, nullable=False)
+    traffic_limit_override_gb = Column(Integer, nullable=True)
+    purchased_traffic_gb = Column(Integer, nullable=False, default=0, server_default='0')
+    traffic_used_bytes = Column(BigInteger, nullable=False, default=0, server_default='0')
+    panel_status = Column(String(20), nullable=False, default='DISABLED', server_default='DISABLED')
+    migration_state = Column(String(16), nullable=False, default='pending', server_default='pending')
+    created_at = Column(AwareDateTime(), nullable=False, default=func.now(), server_default=func.now())
+    updated_at = Column(
+        AwareDateTime(), nullable=False, default=func.now(), onupdate=func.now(), server_default=func.now()
+    )
 
 
 class TrafficPurchase(Base):

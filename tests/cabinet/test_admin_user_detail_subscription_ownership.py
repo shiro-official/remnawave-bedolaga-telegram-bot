@@ -443,6 +443,7 @@ async def test_selected_sync_uses_only_selected_panel_id_when_legacy_mode_is_ena
     )
     db = AsyncMock()
 
+    db.execute.return_value = SimpleNamespace(first=lambda: None, scalar_one_or_none=lambda: None)
     changes = await admin_users._sync_subscription_to_panel(db, user, subscription, pinned_subscription_identity=True)
 
     assert changes.get('action') == 'updated'

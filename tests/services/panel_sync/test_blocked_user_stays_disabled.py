@@ -97,7 +97,9 @@ async def test_bulk_sync_does_not_reactivate_a_blocked_user(monkeypatch):
 
     monkeypatch.setattr(service, 'get_api_client', fake_client)
 
-    await service.sync_users_to_panel(AsyncMock())
+    db = AsyncMock()
+    db.execute.return_value = SimpleNamespace(first=lambda: None, scalar_one_or_none=lambda: None)
+    await service.sync_users_to_panel(db)
 
     assert api.update_user.await_args.kwargs['status'] is UserStatus.DISABLED
 
@@ -140,7 +142,7 @@ async def test_cabinet_sync_does_not_reactivate_a_blocked_user(monkeypatch):
     monkeypatch.setattr('app.utils.subscription_utils.resolve_hwid_device_limit_for_payload', lambda _sub: None)
 
     db = AsyncMock()
-    db.execute = AsyncMock(return_value=SimpleNamespace(scalar_one_or_none=lambda: None))
+    db.execute = AsyncMock(return_value=SimpleNamespace(scalar_one_or_none=lambda: None, first=lambda: None))
 
     await admin_users._sync_subscription_to_panel(db, _blocked_user(), _live_subscription())
 
